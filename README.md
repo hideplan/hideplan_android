@@ -7,10 +7,10 @@ Hideplan is service with encrypted to-do lists, calendars and notes. Registratio
 Needs heavy refactoring 
 
 ##Working 
--creating calendars-events, to-do lists-tasks and notebooks-notes,
+- creating calendars-events, to-do lists-tasks and notebooks-notes,
 - notifications - app use local notifications for tasks and events. At this stage, notifications might not work properly.
 
 ##Plans
--repeated events, 
--sharing, 
--seamless multidevice syncing.
+- repeated events, 
+- sharing, 
+- seamless multidevice syncing.
