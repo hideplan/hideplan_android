@@ -51,7 +51,7 @@ class NoteInput extends React.Component {
           "uuid": this.state.uuid, "title": this.state.title, "text": this.state.text, "notebook": this.props.notebookName.uuid, "updated": noteTimestamp
         }, "notes", "Note created")
       /*
-    sendPost("http://localhost:3001/edit/note", {
+    sendPost("https://api.hideplan.com/edit/note", {
       data: encryptedData, timestamp: noteTimestamp
     }, () => {this.props.editNote("noteId" + this.state.uuid, {
       "id": this.state.uuid, "data": encryptedData, "timestamp": noteTimestamp }, {

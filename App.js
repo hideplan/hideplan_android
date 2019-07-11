@@ -184,7 +184,7 @@ const TabNavigator = createMaterialBottomTabNavigator({
     },
 
 }, {
-  initialRouteName: 'Tasks',
+  initialRouteName: 'Calendar',
  
   activeColor: "royalblue",
   inactiveColor: 'dimgray',
@@ -241,7 +241,7 @@ const TabNavigatorDark = createMaterialBottomTabNavigator({
     },
 
 }, {
-  initialRouteName: 'Tasks',
+  initialRouteName: 'Calendar',
  
   activeColor: 'dodgerblue',
   inactiveColor: '#929390',
@@ -502,7 +502,7 @@ export default class App extends React.Component {
 
   checkClientEncryption = () => {
     if (this.state.isLogged) {
-      const url = "http://localhost:3001/encryption/check";
+      const url = "https://api.hideplan.com/encryption/check";
 
       fetch(url,
         {
@@ -637,7 +637,7 @@ export default class App extends React.Component {
    
   }
   fetchInvites = () => {
-    const url = "http://localhost:3001/fetch/invites";
+    const url = "https://api.hideplan.com/fetch/invites";
 
     fetch(url,
       {
@@ -662,7 +662,7 @@ export default class App extends React.Component {
     return new Promise((resolve, reject) => {
 
     this.sqlFind("passwords", "type = 'passwords'").then(passwordsData => { 
-      const url = "http://localhost:3001/fetch/passwords";
+      const url = "https://api.hideplan.com/fetch/passwords";
 
       fetch(url,
         {
@@ -831,7 +831,7 @@ fetchEventsFromServer = () => {
     let settingsThemeLoaded = false
   this.sqlGetAll().then(dataSql => {
 
-        const url = "http://localhost:3001/fetch/data";
+        const url = "https://api.hideplan.com/fetch/data";
 
         fetch(url,
           {
@@ -1688,7 +1688,7 @@ fetchEventsFromServer = () => {
 
   clearCryptoPassword = () => {
     this.setState({       sqlLoaded: false,
-      darkTheme: false,
+      darkTheme: true,
       isLogged: "",
       isUpdating: false,
       user: "",
@@ -1862,7 +1862,7 @@ fetchEventsFromServer = () => {
 //kata
     uploadOneLocalData = async (data) => {
       //Load only one item when saving new data
-          sendPostAsync(`http://localhost:3001/save/${data.type}`,data).then(() => 
+          sendPostAsync(`https://api.hideplan.com/save/${data.type}`,data).then(() => 
                   this.sqlUpdate(data.type, "isLocal = 'false', needSync = 'false'", `uuid = '${data.uuid}'` )
                   ).catch ((error) => {
                     console.log(error);
@@ -1912,9 +1912,9 @@ fetchEventsFromServer = () => {
     }
 
   saveOnServer = async (dataType, dataObj, timestamp) => {
-    sendPost("http://localhost:3001/save/note", 
+    sendPost("https://api.hideplan.com/save/note", 
       dataObj, () => {
-      const baseUrl = "http://localhost:3001/fetch/id/";
+      const baseUrl = "https://api.hideplan.com/fetch/id/";
       let type = dataType + "/" //data type
       let timestamp = "timestamp/" + dataObj.updated + "/"
       let encryptedString = "encryptedData/" + dataObj.data
@@ -1934,7 +1934,7 @@ fetchEventsFromServer = () => {
 
 fetchId = (dataType, dataObj,) => {
   return new Promise((resolve, reject) => {
-    const baseUrl = "http://localhost:3001/fetch/id/";
+    const baseUrl = "https://api.hideplan.com/fetch/id/";
     let type = dataType + "/" //data type
     let timestamp = "timestamp/" + dataObj.updated + "/"
     let encryptedData = "encryptedData/" + dataObj.data
@@ -1984,7 +1984,7 @@ updateStateId = (myState, storeKey, newId) => {
     })
     }
     updateServerData = (data) => {
-        const url = "http://localhost:3001/edit/" + data.type
+        const url = "https://api.hideplan.com/edit/" + data.type
         sendPostAsync(url, {
           data
         }).then(() => {
@@ -1994,7 +1994,7 @@ updateStateId = (myState, storeKey, newId) => {
         })
     }
     updateServerDataSettings = (data) => {
-      const url = "http://localhost:3001/settings"
+      const url = "https://api.hideplan.com/settings"
       sendPost(url, {
         data
       }, () => {
@@ -2047,7 +2047,7 @@ updateStateId = (myState, storeKey, newId) => {
     }
 
     deleteServerData = (data) => {
-        const url = "http://localhost:3001/delete/" + data.type
+        const url = "https://api.hideplan.com/delete/" + data.type
         sendPostAsync(url, {
           data
         }).then(() => this.sqlDeleteItem(data.type, `uuid = '${data.uuid}'`)
@@ -2333,7 +2333,7 @@ sqlGetAllContent = (condition) => {
 }) 
 }
 checkUpdates = () => {
-  const url = "http://localhost:3001/check/updates";
+  const url = "https://api.hideplan.com/check/updates";
 
   fetch(url,
     {
@@ -2379,111 +2379,12 @@ checkUpdates = () => {
 
   render() {
 
-    const hadBeenAuthenticated = this.state.isLogged && this.state.cryptoPassword
+    const hadBeenAuthenticated = this.state.isLogged && this.state.cryptoPassword && this.state.defaultCalendar
     return this.state.isLoadingData == false
       ?
       (hadBeenAuthenticated
-        ? (this.state.darkTheme
-          ?<AppContainerDark
-     
-          ref={navigatorRef => {
-            NavigationService.setTopLevelNavigator(navigatorRef);
-          }}
-          navigation={this.props.navigation}
-          screenProps={{
-            //SQL
-            sqlInsert: this.sqlInsert,
-            sqlDelete: this.sqlDelete,
-            sqlFind: this.sqlFind,
-            passwords: this.state.passwords,
-            findPassword: this.findPassword,
-            invites: this.state.invites,
-            //
-            darkTheme: this.state.darkTheme,
-            refreshData: this.refreshData,
-            triggerDarkTheme: this.triggerDarkTheme,
-            saveNewData: this.saveNewData,
-            storeCryptoPasswordInState: this.storeCryptoPasswordInState,
-            eventsCount: this.state.notificationsCountEvents,
-            user: this.state.user,
-            cryptoPassword: this.state.cryptoPassword,
-            save: this.save,
-            load: this.load,
-            reset: this.reset,
-            setCredentials: this.setCredentials,
-            isLogged: this.isLogged,
-            decryptedData: this.state.events,
-            calendars: this.state.calendars,
-            notes: this.state.notes,
-            fetchEventsFromServer: this.fetchEventsFromServer,
-            eventWasDeleted: this.eventWasDeleted,
-            saveEventAfterPost: this.saveEventAfterPost,
-            saveeventsToLocal: this.saveeventsToLocal,
-            saveTaskAfterPost: this.saveTaskAfterPost,
-            editEvent: this.editEvent,
-            isLoadingData: this.state.isLoadingData,
-            removeOldEvent: this.removeOldEvent,
-            tasks: this.state.tasks,
-            searchData: this.searchData,
-            foundData: this.state.foundData,
-            tagsData: this.state.tagsData,
-            loadAppData: this.loadAppData,
-            clearCryptoPassword: this.clearCryptoPassword,
-            logUser: this.logUser,
-            isUpdating: this.state.isUpdating,
-            triggerUpdate: this.triggerUpdate,
-            //Toast props
-            toastIsVisible: this.state.toastIsVisible,
-            toastType: this.state.toastType,
-            toastText: this.state.toastText,
-            toastDuration: this.state.toastDuration,
-            createToast: this.createToast,
-            hideToast: this.hideToast,
-            //Calendar props
-            currentWeek: this.state.currentWeek,
-            currentDay: this.state.currentDay,
-            selectedDate: this.state.selectedDate,
-            changeDate: this.changeDate,
-            dayData: this.state.dayData,
-            weekDays: this.state.weekDays,
-            index: this.state.index,
-            weekIndex: this.state.weekIndex,
-            selectedIndex: this.state.selectedIndex,
-            setDataToArray: this.setDataToArray,
-            defaultCalendar: this.state.defaultCalendar,
-            checkCalendar: this.checkCalendar,
-            calendars: this.state.calendars,
-            loadMoreData: this.loadMoreData,
-            events: this.state.events,
-            //########x
-            //TASKS
-            editTask: this.editTask,
-            filteredTasks: this.state.filteredTasks,
-            mapTags: this.mapTags,
-            tagName: this.state.tagName,
-            filterTasksOnDemand: this.filterTasksOnDemand,
-            filterTasksOnLoad: this.filterTasksOnLoad,
-            triggerMarked: this.triggerMarked,
-            lists: this.state.lists,
-            defaultList: this.state.defaultList,
-            findDefaultList: this.findDefaultList,
-            //Notes
-            notebooks: this.state.notebooks,
-            saveNewItem: this.saveNewItem,
-            editNote: this.editNote,
-            editItem: this.editItem,
-            deleteItem: this.deleteItem,
-            filterNotebooksOnDemand: this.filterNotebooksOnDemand,
-            filterNotebooksOnLoad: this.filterNotebooksOnLoad,
-            findDefaultNotebook: this.findDefaultNotebook,
-            defaultNotebook: this.state.defaultNotebook,
-            notebookName: this.state.notebookName,
-            deleteParrent: this.deleteParrent,
-            findDefaultLista: this.findDefaultLista,
-          }}
-        >
-        </AppContainerDark>
-        : <AppContainer
+        ? (this.state.darkTheme == false
+          ? <AppContainer
      
         ref={navigatorRef => {
           NavigationService.setTopLevelNavigator(navigatorRef);
@@ -2584,6 +2485,105 @@ checkUpdates = () => {
         }}
       >
       </AppContainer>
+      : <AppContainerDark
+     
+      ref={navigatorRef => {
+        NavigationService.setTopLevelNavigator(navigatorRef);
+      }}
+      navigation={this.props.navigation}
+      screenProps={{
+        //SQL
+        sqlInsert: this.sqlInsert,
+        sqlDelete: this.sqlDelete,
+        sqlFind: this.sqlFind,
+        passwords: this.state.passwords,
+        findPassword: this.findPassword,
+        invites: this.state.invites,
+        //
+        darkTheme: this.state.darkTheme,
+        refreshData: this.refreshData,
+        triggerDarkTheme: this.triggerDarkTheme,
+        saveNewData: this.saveNewData,
+        storeCryptoPasswordInState: this.storeCryptoPasswordInState,
+        eventsCount: this.state.notificationsCountEvents,
+        user: this.state.user,
+        cryptoPassword: this.state.cryptoPassword,
+        save: this.save,
+        load: this.load,
+        reset: this.reset,
+        setCredentials: this.setCredentials,
+        isLogged: this.isLogged,
+        decryptedData: this.state.events,
+        calendars: this.state.calendars,
+        notes: this.state.notes,
+        fetchEventsFromServer: this.fetchEventsFromServer,
+        eventWasDeleted: this.eventWasDeleted,
+        saveEventAfterPost: this.saveEventAfterPost,
+        saveeventsToLocal: this.saveeventsToLocal,
+        saveTaskAfterPost: this.saveTaskAfterPost,
+        editEvent: this.editEvent,
+        isLoadingData: this.state.isLoadingData,
+        removeOldEvent: this.removeOldEvent,
+        tasks: this.state.tasks,
+        searchData: this.searchData,
+        foundData: this.state.foundData,
+        tagsData: this.state.tagsData,
+        loadAppData: this.loadAppData,
+        clearCryptoPassword: this.clearCryptoPassword,
+        logUser: this.logUser,
+        isUpdating: this.state.isUpdating,
+        triggerUpdate: this.triggerUpdate,
+        //Toast props
+        toastIsVisible: this.state.toastIsVisible,
+        toastType: this.state.toastType,
+        toastText: this.state.toastText,
+        toastDuration: this.state.toastDuration,
+        createToast: this.createToast,
+        hideToast: this.hideToast,
+        //Calendar props
+        currentWeek: this.state.currentWeek,
+        currentDay: this.state.currentDay,
+        selectedDate: this.state.selectedDate,
+        changeDate: this.changeDate,
+        dayData: this.state.dayData,
+        weekDays: this.state.weekDays,
+        index: this.state.index,
+        weekIndex: this.state.weekIndex,
+        selectedIndex: this.state.selectedIndex,
+        setDataToArray: this.setDataToArray,
+        defaultCalendar: this.state.defaultCalendar,
+        checkCalendar: this.checkCalendar,
+        calendars: this.state.calendars,
+        loadMoreData: this.loadMoreData,
+        events: this.state.events,
+        //########x
+        //TASKS
+        editTask: this.editTask,
+        filteredTasks: this.state.filteredTasks,
+        mapTags: this.mapTags,
+        tagName: this.state.tagName,
+        filterTasksOnDemand: this.filterTasksOnDemand,
+        filterTasksOnLoad: this.filterTasksOnLoad,
+        triggerMarked: this.triggerMarked,
+        lists: this.state.lists,
+        defaultList: this.state.defaultList,
+        findDefaultList: this.findDefaultList,
+        //Notes
+        notebooks: this.state.notebooks,
+        saveNewItem: this.saveNewItem,
+        editNote: this.editNote,
+        editItem: this.editItem,
+        deleteItem: this.deleteItem,
+        filterNotebooksOnDemand: this.filterNotebooksOnDemand,
+        filterNotebooksOnLoad: this.filterNotebooksOnLoad,
+        findDefaultNotebook: this.findDefaultNotebook,
+        defaultNotebook: this.state.defaultNotebook,
+        notebookName: this.state.notebookName,
+        deleteParrent: this.deleteParrent,
+        findDefaultLista: this.findDefaultLista,
+      }}
+    >
+    </AppContainerDark>
         )
         : <AppContainerAnonym screenProps={{ isLogged: this.isLogged }}
         ref={navigatorRef => {
@@ -2604,6 +2604,7 @@ checkUpdates = () => {
           logUser: this.logUser,
           loadAppData: this.loadAppData,
           darkTheme: this.state.darkTheme,
+          defaultCalendar: this.state.defaultCalendar,
             //Toast props
             toastIsVisible: this.state.toastIsVisible,
             toastType: this.state.toastType,

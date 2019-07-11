@@ -42,7 +42,7 @@ class NoteInput extends React.Component {
     let encryptedData = encryptData(dataForEncryption, this.props.cryptoPassword);
     let uuid = createId("notes")
     /*
-    sendPost("http://localhost:3001/save/note", {
+    sendPost("https://api.hideplan.com/save/note", {
       data: encryptedData, timestamp: noteTimestamp
     }, () => {this.getNotesId(encryptedData, noteTimestamp)})    
     */

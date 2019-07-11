@@ -23,7 +23,7 @@ export class EventDetails extends React.Component {
   
   deleteEventFromServer = (id) => {
     //Send request to server to delete event based on id
-    sendPost("http://localhost:3001/delete/event", {
+    sendPost("https://api.hideplan.com/delete/event", {
       eventId: id
     }, () => { this.props.eventWasDeleted(id) })
     NavigationService.navigate('Calendar') 

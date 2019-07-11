@@ -488,23 +488,22 @@ export default class NotesScreen extends React.Component {
       this.BottomSheetMenu.close()
     }
   
-    deleteItem = (note) => {
-      this.props.screenProps.deleteItem(note)
-      NavigationService.navigate('Notes')
+    deleteItem = (item) => {
+      let itemObj = {...item, ...{type: "notes"}}
+      this.props.screenProps.deleteItem(itemObj)
     }
-    deleteAlert = (note, func) => {
+    deleteAlert = (noteName, item) => {
       this.BottomSheetMenu.close()
-      let noteItem = {...note, ...{type: "notes"}}
       Alert.alert(
         'Delete note',
-        `Do you want to delete note "${note.title}"?`,
+        `Do you want to delete note "${noteName}"?`,
         [
           {
             text: 'Cancel',
             onPress: () => {},
             style: 'cancel',
           },
-          {text: 'Delete', onPress: () => {this.deleteItem(noteItem)},
+          {text: 'Delete', onPress: () => {this.deleteItem(item)},
           }
           ],
       );
@@ -639,7 +638,7 @@ export default class NotesScreen extends React.Component {
        
         </TouchableNativeFeedback>
         <TouchableNativeFeedback 
-        onPress={() => {this.BottomSheetMenu.close(), this.deleteAlert(this.state.selectedItem.text, this.state.selectedItem)}}>
+        onPress={() => {this.BottomSheetMenu.close(), this.deleteAlert(this.state.selectedItem.title, this.state.selectedItem)}}>
                      <View style={{  width: "100%",
       flexDirection: "row", paddingLeft: 20, paddingRight: 20, paddingTop: 10, paddingBottom: 10}}>
       <View style={{width: "10%", justifyContent: "center"}}>

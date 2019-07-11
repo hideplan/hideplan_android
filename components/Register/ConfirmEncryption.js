@@ -6,7 +6,7 @@ import { Content, Form, Item, Label, Button, Icon } from 'native-base';
 import { Input, LabelBottom, FormButton, BasicButton } from '../../customComponents.js';
 import NavigationService from '../../NavigationService.js';
 import CryptoJS from "react-native-crypto-js";
-import { saveToKeychain, decryptDataCheck } from '../../encryptionFunctions';
+import { saveToKeychain, decryptDataCheckPromise } from '../../encryptionFunctions';
 import { Toast } from '../../customComponents.js';
 
 const HEIGHT = Dimensions.get('window').height;
@@ -72,14 +72,16 @@ class PasswordForm extends React.Component {
 
   verifyCryptoPassword = () => {
     // Decrypt dummy encrypted text with prompted CryptoPassword for verification
-    if (decryptDataCheck(this.props.dummyEncryptionText, this.state.cryptoPassword)) {
+    decryptDataCheckPromise(this.props.dummyEncryptionText, this.state.cryptoPassword).then(() => {
       saveToKeychain(this.props.username, this.state.cryptoPassword, this.props.loadAppData) 
-     
-    } else {
-      this.setState({ cryptoPasswordError: true, })
-      this.props.createToast("Encryption password is wrong", "warning", 4000)
+    }).catch((error) => {
+      this.props.createToast("Wrong encryption password", "warning", 4000)
 
-    }
+      if (error) {
+        this.props.createToast("Wrong encryption password", "warning", 4000)
+      }
+      console.log(error);
+    })
   }
 
   setCryptoPassword = () => {

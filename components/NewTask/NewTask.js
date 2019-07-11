@@ -199,14 +199,14 @@ timePicker = async() => {
       NavigationService.navigate('Tasks')
   }
     /*
-    sendPost("http://localhost:3001/save/task", {
+    sendPost("https://api.hideplan.com/save/task", {
       data: encryptedData, timestamp: timestamp, listid: listId
     }, () => {this.getId(encryptedData, timestamp, dataForEncryption)})
     */
   
   
   getId = (encryptedData, itemTimestamp, stringData) => {
-    const baseUrl = "http://localhost:3001/fetch/id/";
+    const baseUrl = "https://api.hideplan.com/fetch/id/";
     let type = "typetasks/" //NS as notes
     let timestamp = "timestamp/" + itemTimestamp + "/"
     let encryptedString = "encryptedData/" + encryptedData

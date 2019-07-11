@@ -294,7 +294,7 @@ class AddListModal extends React.Component {
                     color="#EF2647"
                     disabled={this.state.username.length < 4}
                     title="Save"
-                    onPress={() => {  sendPost("http://localhost:3001/invite/", 
+                    onPress={() => {  sendPost("https://api.hideplan.com/invite/", 
                     {table: "lists", "uuid": this.props.tagName.uuid, name: this.state.username}, () => {}) }}
                   />
                 </TouchableNativeFeedback>
@@ -437,7 +437,7 @@ class Task extends React.Component {
     let encryptedData = encryptData(dataForEncryption, this.props.cryptoPassword);
     let timestamp = new Date().getTime()
     let localData = { "id": task.uuid, "data": encryptedData, "timestamp": timestamp }
-    sendPost("http://localhost:3001/edit/task", {
+    sendPost("https://api.hideplan.com/edit/task", {
       id: task.uuid,
       timestamp: timestamp,
       data: encryptedData
@@ -753,7 +753,7 @@ export default class TasksScreen extends React.Component {
       let encryptedPassword = encryptData(passObj, this.props.screenProps.cryptoPassword)
       console.log(passObj)
 
-        sendPostAsync(`http://localhost:3001/save/passwords`, 
+        sendPostAsync(`https://api.hideplan.com/save/passwords`, 
         {
           "uuid": uuid2, "data": encryptedPassword, "updated": timestamp, "type": "passwords", "parrent": uuid, "shared": "true", "isLocal": "true"})
   }

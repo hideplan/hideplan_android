@@ -9,12 +9,25 @@ import CryptoJS from "react-native-crypto-js";
 import { saveToKeychain } from '../../encryptionFunctions';
 import { Toast } from '../../customComponents.js';
 import { sendPostAsync } from '../../functions.js';
+import { Spinner } from 'native-base';
+import { Keyboard } from 'react-native'
 
 const HEIGHT = Dimensions.get('window').height;
 const WIDTH = Dimensions.get('window').width;
 
 <script src="http://localhost:8097"></script>
 
+class LoadingSpinner extends React.Component {
+
+  render() {
+    return (
+          <View style={{backgroundColor: "rgba(28, 28, 28, 0.9)", justifyContent: "center", alignItems: "center", position: "absolute", top: 0, left: 0, flex: 1, height: HEIGHT, width: WIDTH, elevation: 7}}>
+          <Spinner color='dodgerblue' />
+          <Text style={{ fontSize: 20, textAlign: "center", color: "mintcream" }}>Registering account</Text>
+          </View>
+    );
+  }
+}
 
 class Separator extends React.Component {
   render() {
@@ -111,12 +124,13 @@ class RegisterForm extends React.Component {
 
 
   registerUser = () => {
+    this.props.triggerSpinner(true)
     let calendarData = this.encryptData(`{"calendar": "My calendar", "color": "seagreen", "isChecked": true}`)
     let listData = this.encryptData(`{"list": "My tasks"}`)
     let notebookData = this.encryptData(`{"notebook": "My notebook"}`)
     let timestamp = new Date().getTime()
     sendPostAsync(
-      "http://localhost:3001/register",
+      "https://api.hideplan.com/register",
       {
         username: this.props.username,
         password: this.props.password,
@@ -125,12 +139,14 @@ class RegisterForm extends React.Component {
         notebook: {data: notebookData, timestamp: timestamp},
         dummy: this.encryptData("Encryption is set")
       }).then((res) => {
+        this.props.triggerSpinner(false)
         if (res == "resolved") {
           this.logIn()
         } else {
           this.failedRegistration()
         }
       }).catch((error) => {
+        this.props.triggerSpinner(false)
         if (error) {
           this.props.createToast("Connection error", "warning", 4000)
         }
@@ -140,7 +156,7 @@ class RegisterForm extends React.Component {
   }
 
   logIn = () => {
-    this.post("http://localhost:3001/login", {
+    this.post("https://api.hideplan.com/login", {
       username: this.props.username,
       password: this.props.password
     }, this.registered)
@@ -162,7 +178,7 @@ class RegisterForm extends React.Component {
   saveEncryption = () => {
     // Save encrypted dummy text for future verification after login, if user has entered encryption password. If not, prompt user to set it
     // Use to verify correct password for encryption in client side
-    this.post("http://localhost:3001/save/encryption", {
+    this.post("https://api.hideplan.com/save/encryption", {
       data: {username: this.props.username,
       dummy: this.encryptData("Encryption is set")
     }}, this.logIn)
@@ -237,7 +253,7 @@ class RegisterForm extends React.Component {
 
 />
 <LabelBottom 
-  text="Choose different password with at least 8 characters"
+  text="Choose strong encryption key with at least 8 characters"
   isVisible={true}
 />
 
@@ -265,19 +281,16 @@ Confirm
 <View style={{  paddingLeft: 20, marginBottom: 30, paddingRight: 20 }}>
           <ScrollView style={{marginBottom: 20, padding: 8, borderRadius: 8}}>
     <Text style={{ color: "#B7B7B7", fontFamily: 'Poppins-Regular', includeFontPadding: false, includeFontPadding: false,fontSize: 16 }}>
+    {"\n"}
     - this password is used only for encrypting and decrypting your content. 
     {"\n"}
-    {"\n"}
     - it is never sent to our server and is securely stored in Android Key Chain.
-{"\n"}
     </Text>
-
-
     <Text style={{ color: "#B7B7B7", fontFamily: 'Poppins-Regular', includeFontPadding: false, includeFontPadding: false,fontSize: 16 }}>
     - there is no way to recover it - if you forget encryption password, you will loose all your data, so be careful,
     </Text>
     <Text style={{ color: "#B7B7B7", fontFamily: 'Poppins-Regular', includeFontPadding: false, includeFontPadding: false,fontSize: 16 }}>
-    - choose strong password different from your account password.
+    - choose strong encryption password different from your account password.
     </Text>
       </ScrollView>
       </View>
@@ -299,9 +312,17 @@ export default class RegisterEncryptionScreen extends React.Component {
       toastIsVisible: false,
       toastType: "",
       toastText: "",
-      toastDuration: ""
+      toastDuration: "",
+      isRegisteringAccount: false,
     };
   }
+
+  triggerSpinner = (value) => {
+    Keyboard.dismiss()
+    this.setState({ isRegisteringAccount: value })
+  }
+
+
   createToast = (toastText, toastType, toastDuration) => {
     this.setState({
       toastIsVisible: true,
@@ -358,11 +379,15 @@ export default class RegisterEncryptionScreen extends React.Component {
           isLogged={this.props.navigation.state.params.isLogged}
           sqlInsert={this.props.navigation.state.params.sqlInsert}
           createToast={this.createToast}
-
+          triggerSpinner={this.triggerSpinner}
         />
 
 
       </View>
+      {this.state.isRegisteringAccount
+      ? <LoadingSpinner />
+      : null
+      }
       </View>
     );
   }

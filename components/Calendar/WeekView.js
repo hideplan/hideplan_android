@@ -131,7 +131,7 @@ class Event extends React.PureComponent {
 
     let dataForEncryption = this.convertToText(dateFrom, dateTill);
     let encryptedData = encryptData(dataForEncryption, this.props.cryptoPassword);
-    sendPost("http://localhost:3001/edit/event", {
+    sendPost("https://api.hideplan.com/edit/event", {
       id: this.props.event.uuid,
       dateFrom: dateFrom,
       timestamp: timestamp,

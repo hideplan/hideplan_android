@@ -2,16 +2,29 @@ import React from "react";
 //import "./Register.css";
 import { TouchableNativeFeedback, Dimensions, View, Text, TouchableWithoutFeedback, Alert, ActivityIndicator } from "react-native"
 import { AsyncStorage } from "react-native"
-import { Content, Form, Item, Label, Button, Icon } from 'native-base';
+import { Spinner, Content, Form, Item, Label, Button, Icon } from 'native-base';
 import { Input, LabelBottom, FormButton, BasicButton } from '../../customComponents.js';
 import { Toast } from '../../customComponents.js';
-import { sendPostAsync } from '../../functions.js';
+import { sendPostAsync, timeoutPromise } from '../../functions.js';
 import NavigationService from '../../NavigationService.js';
+import { Keyboard } from 'react-native'
+
 const HEIGHT = Dimensions.get('window').height;
 const WIDTH = Dimensions.get('window').width;
 
 <script src="http://localhost:8097"></script>
 
+class LoadingSpinner extends React.Component {
+
+  render() {
+    return (
+          <View style={{backgroundColor: "rgba(28, 28, 28, 0.9)", justifyContent: "center", alignItems: "center", position: "absolute", top: 0, left: 0, flex: 1, height: HEIGHT, width: WIDTH, elevation: 7}}>
+          <Spinner color='dodgerblue' />
+          <Text style={{ fontSize: 20, textAlign: "center", color: "mintcream" }}>Checking username</Text>
+          </View>
+    );
+  }
+}
 
 class Policy extends React.Component {
   render() {
@@ -59,17 +72,25 @@ class RegisterForm extends React.Component {
 
   }
 
+  
   validateForm = () => {
-
-    sendPostAsync("http://localhost:3001/check/username", {username: this.state.username
-    }).then((res) => {
+    this.props.triggerSpinner(true)
+    sendPostAsync("https://api.hideplan.com/check/username", {username: this.state.username
+  }).then((res) => {
+      this.props.triggerSpinner(false)
       if (res == "resolved") {
         NavigationService.navigate('RegisterPassword', {sqlInsert: this.props.sqlInsert, isLogged: this.props.isLogged, username: this.state.username, logUser: this.props.logUser})
+      } else if (res === "timeout") {
+        this.props.triggerSpinner(false)
+        this.props.createToast("No connection", "warning", 4000)
+
       } else {
         this.wrongUser()
       }
   }
     ).catch((error) => {
+      this.props.triggerSpinner(false)
+
       if (error) {
         this.props.createToast("Connection error", "warning", 4000)
       }
@@ -132,7 +153,7 @@ class RegisterForm extends React.Component {
 
             <LabelBottom
             text="Write at least 4 characters"
-            isVisible={this.state.buttonIsDisabled}
+            isVisible={true}
           />
           <Separator height={25} />
           <View style={buttonWrapper}>
@@ -172,6 +193,18 @@ export default class RegisterNameScreen extends React.Component {
   static navigationOptions = {
     header: null
   };
+  constructor(props) {
+    super(props);
+    this.state = {
+      isCheckingName: false,
+    };   
+  }
+
+  triggerSpinner = (value) => {
+    Keyboard.dismiss()
+    this.setState({ isCheckingName: value })
+  }
+
 
   render() {
     const titleStyle = {
@@ -206,8 +239,13 @@ export default class RegisterNameScreen extends React.Component {
         sqlInsert={this.props.screenProps.sqlInsert}
         isLogged={this.props.screenProps.isLogged}
         createToast={this.props.screenProps.createToast}
+        triggerSpinner={this.triggerSpinner}
         />
       </View>
+      {this.state.isCheckingName
+      ? <LoadingSpinner />
+      : null
+      }
       </View>
 
     );

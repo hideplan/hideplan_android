@@ -268,7 +268,7 @@ logoutAlert = () => {
   );
 }
   logOut = () => {
-    sendPost("http://localhost:3001/logout", "", () => {
+    sendPost("https://api.hideplan.com/logout", "", () => {
     });
     resetKeychain()
     this.props.screenProps.clearCryptoPassword()

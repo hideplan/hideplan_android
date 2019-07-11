@@ -233,7 +233,7 @@ class EventIntput extends React.Component {
   }
   
   fetchEvents() {
-    const url = "http://localhost:3001/fetch/events";
+    const url = "https://api.hideplan.com/fetch/events";
  
     fetch(url, 
       {method: 'GET',

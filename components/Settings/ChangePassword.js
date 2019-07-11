@@ -123,7 +123,7 @@ class ChangePassword extends React.Component {
     this.createToast("Please fill the form", "warning", 4000)
   } else {
     if(this.checkPasswordMatch()) {
-      this.post("http://localhost:3001/change/password", {oldPassword: this.state.oldPassword, newPassword: this.state.newPassword}, this.changedPassword, this.wrongPassword)
+      this.post("https://api.hideplan.com/change/password", {oldPassword: this.state.oldPassword, newPassword: this.state.newPassword}, this.changedPassword, this.wrongPassword)
     }
 
   }
@@ -169,7 +169,7 @@ class ChangePassword extends React.Component {
 
   registerUser = () => {
     this.post(
-      "http://localhost:3001/change/password",
+      "https://api.hideplan.com/change/password",
       {
         username: this.state.username,
         password: this.state.password,

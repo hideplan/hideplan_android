@@ -1,15 +1,29 @@
 import React from "react";
-import { Keyboard, ActivityIndicator, TouchableNativeFeedback, View, Alert, StatusBar } from "react-native"
+import { Dimensions, Keyboard, ActivityIndicator, TouchableNativeFeedback, View, Alert, StatusBar } from "react-native"
 import { AsyncStorage } from "react-native"
 import { Content, Card, CardItem, Body, Text, Button, Icon, Item, Label } from 'native-base';
 import { Toast, Input, LabelBottom, FormButton, BasicButton } from '../../customComponents.js';
 import { resetKeychain } from '../../encryptionFunctions';
 import { Container, Header, Left, Right, Title, Fab, ListItem, CheckBox, Tab, Tabs, TabHeading } from 'native-base';
 import { HeaderIcon } from '../../customComponents.js';
-
+import { Spinner } from 'native-base';
+import { sendPostAsync } from '../../functions.js';
 <script src="http://localhost:8097"></script>
 
+const HEIGHT = Dimensions.get('window').height;
+const WIDTH = Dimensions.get('window').width;
 
+class LoadingSpinner extends React.Component {
+
+  render() {
+    return (
+          <View style={{backgroundColor: "rgba(28, 28, 28, 0.9)", justifyContent: "center", alignItems: "center", position: "absolute", top: 0, left: 0, flex: 1, height: HEIGHT, width: WIDTH, elevation: 7}}>
+          <Spinner color='dodgerblue' />
+          <Text style={{ fontSize: 20, textAlign: "center", color: "mintcream" }}>Deleting account</Text>
+          </View>
+    );
+  }
+}
 class Separator extends React.Component {
   render() {
     const customHeight = this.props.height;
@@ -113,12 +127,23 @@ class Delete extends React.Component {
 
   validateForm = () => {
     Keyboard.dismiss()
-   if(this.state.password.length < 1) {
-    this.createToast("Password is missing", "warning", 4000)
-   }
-   else {
-    this.post("http://localhost:3001/remove/account", {password: this.state.password}, this.userDeleted, this.wrongPassword)
-  }
+
+    this.props.triggerSpinner(true)
+    sendPostAsync("https://api.hideplan.com/remove/account", {password: this.state.password}).then((res) => {
+      this.props.triggerSpinner(false)
+
+      if (res == "resolved") {
+        this.userDeleted()
+      } else {
+        this.props.createToast("Password is wrong", "warning", 4000)
+      }
+    }).catch((error) => {
+      this.props.triggerSpinner(false)
+      if (error) {
+        this.props.createToast("Connection error", "warning", 4000)
+      }
+      console.log(error);
+    })
   }
 
   checkIfFilled = () => {
@@ -241,7 +266,33 @@ export default class DeleteAccountScreen extends React.Component {
   static navigationOptions = {
     header: null,
     };
+    constructor(props) {
+      super(props);
+      this.state = {
+        toastIsVisible: false,
+        toastType: "",
+        toastText: "",
+        toastDuration: "",
+        isDeletingAccount: false,
+      };
+    }
+    triggerSpinner = (value) => {
+      Keyboard.dismiss()
+      this.setState({ isDeletingAccount: value })
+    }
 
+    createToast = (toastText, toastType, toastDuration) => {
+      this.setState({
+        toastIsVisible: true,
+        toastType: toastType,
+        toastText: toastText,
+        toastDuration: toastDuration
+      }, () => this.hideToast())
+      
+    }
+    hideToast = (timeout) => {
+      setTimeout(() => { this.setState({ toastIsVisible: false }) }, 6000)
+    }
   render() {
     const headerStyle = {
       backgroundColor: this.props.screenProps.darkTheme ? '#17191d' : "#F7F5F4",
@@ -272,13 +323,23 @@ export default class DeleteAccountScreen extends React.Component {
      
      </Header>
            <View style={{ flex: 1, backgroundColor: darkTheme ? "#202124" : "#F7F5F4" }}>
+           {this.state.toastIsVisible
+          ? <Toast toastType={this.state.toastType} text={this.state.toastText} duration={this.state.duration} callback={this.hideToast} />
+          : null
+        }
            <View style={{ flex: 1}}>
         <Delete
         darkTheme={this.props.screenProps.darkTheme}
-        clearCryptoPassword={this.props.screenProps.clearCryptoPassword} />
+        clearCryptoPassword={this.props.screenProps.clearCryptoPassword} 
+        triggerSpinner={this.triggerSpinner}
+        createToast={this.createToast}
+        />
             </View>
             </View>
-
+            {this.state.isDeletingAccount
+      ? <LoadingSpinner />
+      : null
+      }
       </Container>
 
     );

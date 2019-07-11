@@ -474,7 +474,7 @@ class EncryptedPassword extends React.Component {
 
   validateForm = () => {
    if(this.checkPasswordMatch()) {
-     this.post("http://localhost:3001/change/password", {oldPassword: this.state.oldPassword, newPassword: this.state.newPassword}, this.changedPassword, this.wrongPassword)
+     this.post("https://api.hideplan.com/change/password", {oldPassword: this.state.oldPassword, newPassword: this.state.newPassword}, this.changedPassword, this.wrongPassword)
    }
 
   }
@@ -519,7 +519,7 @@ class EncryptedPassword extends React.Component {
 
   registerUser = () => {
     this.post(
-      "http://localhost:3001/change/password",
+      "https://api.hideplan.com/change/password",
       {
         username: this.state.username,
         password: this.state.password,

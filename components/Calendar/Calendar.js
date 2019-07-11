@@ -9,6 +9,7 @@ import { HeaderIcon } from '../../customComponents.js';
 import WeekView from "./WeekView.js"
 import WeekSwipe from "./WeekSwipe.js"
 import MonthView from "./MonthView.js"
+import ErrorMsg from "../Error/ErrorMsg.js"
 import { DrawerActions } from 'react-navigation';
 import DayView from "./DayView.js"
 import Agenda from "./Agenda.js"
@@ -967,8 +968,12 @@ export default class CalendarScreen extends React.Component {
 
 
       <View style={{ flex: 1, backgroundColor: darkTheme ? "#202124" : "#F7F5F4" }}>
-     
-       <Header 
+      {this.props.screenProps.defaultCalendar
+      ? null
+      : <View style={{height: HEIGHT, width: WIDTH, flex: 1, position: "absolute", top: 0, left: 0, backgroundColor: "#1C1C1C", elevation: 10}}><ErrorMsg logUser={this.props.screenProps.refreshData}/></View> 
+      }
+
+      <Header 
        navigation = {this.props.navigation}
         style={headerStyle}
         >

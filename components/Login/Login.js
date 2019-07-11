@@ -1,12 +1,12 @@
 import React from "react";
 //import "./Register.css";
-import { Dimensions, View, Text, TouchableNativeFeedback, Alert, ActivityIndicator } from "react-native"
+import { Keyboard, Dimensions, View, Text, TouchableNativeFeedback, Alert, ActivityIndicator } from "react-native"
 import { AsyncStorage } from "react-native"
 import { TextInput, HelperText } from 'react-native-paper';
 import { Input, LabelBottom, FormButton, BasicButton } from '../../customComponents.js';
 import NavigationService from '../../NavigationService.js';
 import { HeaderIcon } from '../../customComponents.js';
-import { Container, Header, Left, Body, Right, Icon, Title, Content, Fab, ListItem, CheckBox, Tab, Tabs, TabHeading, SwipeRow } from 'native-base';
+import { Container, Header, Left, Body, Right, Icon, Title, Content, Fab, ListItem, CheckBox, Tab, Tabs, TabHeading, SwipeRow, Spinner } from 'native-base';
 import { Toast } from '../../customComponents.js';
 import { sendPostAsync } from '../../functions.js';
 
@@ -14,7 +14,17 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 const HEIGHT = Dimensions.get('window').height;
 const WIDTH = Dimensions.get('window').width;
 <script src="http://localhost:8097"></script>
+class LoadingSpinner extends React.Component {
 
+  render() {
+    return (
+          <View style={{backgroundColor: "rgba(28, 28, 28, 0.9)", justifyContent: "center", alignItems: "center", position: "absolute", top: 0, left: 0, flex: 1, height: HEIGHT, width: WIDTH, elevation: 7}}>
+          <Spinner color='dodgerblue' />
+          <Text style={{ fontSize: 20, textAlign: "center", color: "mintcream" }}>Checking credentials</Text>
+          </View>
+    );
+  }
+}
 class Separator extends React.Component {
   render() {
     const customHeight = this.props.height;
@@ -111,17 +121,20 @@ class LoginForm extends React.Component {
 
 
   logIn() {
+    this.props.triggerSpinner(true)
     this.setState({ isLoading: true })
-    sendPostAsync("http://localhost:3001/login", {
+    sendPostAsync("https://api.hideplan.com/login", {
       username: this.state.username,
       password: this.state.password
     }).then((res) => {
+      this.props.triggerSpinner(false)
       if (res == "resolved") {
         this.logginSuccess()
       } else {
         this.failedAuthentication()
       }
     }).catch((error) => {
+      this.props.triggerSpinner(false)
       if (error) {
         this.props.createToast("Connection error", "warning", 4000)
       }
@@ -140,10 +153,10 @@ class LoginForm extends React.Component {
   failedAuthentication(text) {
     if (text === "username") {
       this.setState({ isLoading: false })
-      this.props.createToast("Wrong username", "warning", 4000)
+      this.props.createToast("Wrong credentials", "warning", 4000)
     } else {
       this.setState({ isLoading: false})
-      this.props.createToast("Wrong password credentials", "warning", 4000)
+      this.props.createToast("Wrong credentials", "warning", 4000)
     }
   }
 
@@ -254,12 +267,19 @@ export default class LoginScreen extends React.Component {
       toastIsVisible: false,
       toastType: "",
       toastText: "",
-      toastDuration: ""
+      toastDuration: "",
+      isCheckingCredentials: false
     };
   }
   static navigationOptions = {
     header: null
   };
+
+  triggerSpinner = (value) => {
+    Keyboard.dismiss()
+    this.setState({ isCheckingCredentials: value })
+  }
+
   createToast = (toastText, toastType, toastDuration) => {
     this.setState({
       toastIsVisible: true,
@@ -310,10 +330,14 @@ export default class LoginScreen extends React.Component {
                   logUser={this.props.screenProps.logUser}
                   sqlInsert={this.props.screenProps.sqlInsert}
                   createToast={this.createToast}
+                  triggerSpinner={this.triggerSpinner}
 
           />
              </View>
-             
+             {this.state.isCheckingCredentials
+      ? <LoadingSpinner />
+      : null
+      }
       </View>
 
     );

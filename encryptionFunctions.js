@@ -75,7 +75,20 @@ export const decryptDataCheck = (encryptedData, cryptoPassword) => {
     return false
   }
 }
+export const decryptDataCheckPromise = (encryptedData, cryptoPassword) => {
+  // Decrypt data with Crypto
+  return new Promise((resolve, reject) => {
 
+  let bytes = CryptoJS.AES.decrypt(encryptedData, cryptoPassword);
+  let originalText = bytes.toString(CryptoJS.enc.Utf8);
+
+  if (originalText) {
+    resolve()
+  } else {
+    reject()
+  }
+})
+}
 
 module.exports.saveToKeychain = saveToKeychain;
 module.exports.loadFromKeychain = loadFromKeychain;

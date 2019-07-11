@@ -264,6 +264,13 @@ export default class LandingScreen extends React.Component {
   static navigationOptions = {
     header: null
   };
+  componentDidMount () {
+    if (this.props.screenProps.isLogged && this.props.screenProps.cryptoPassword) {
+      setTimeout(() => {NavigationService.navigate("Error")}, 50)
+
+    }
+
+  }
 
   render() {
     const headerStyle = {
@@ -328,9 +335,11 @@ export default class LandingScreen extends React.Component {
       fontFamily: 'Poppins-Regular', includeFontPadding: false,
 
     }
+
     return (
       <View style={{ flex: 1, backgroundColor: "#1C1C1C"}}>
                             <StatusBar backgroundColor={"#17191d"} barStyle={"light-content"} />
+                            <View style={bodyStyle}>
 
       <View style={headerStyle}>
         <View style={{width: "70%", padding: 20, flexDirection: "row"}}>
@@ -347,8 +356,9 @@ export default class LandingScreen extends React.Component {
       </View>
       </TouchableNativeFeedback>
       </View>
-      <View style={bodyStyle}>
-        <LandingBody/>
+
+     <LandingBody/>
+      
       </View>
 
       <View style={footerStyle}>
