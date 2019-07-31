@@ -766,7 +766,9 @@ export default class CalendarScreen extends React.Component {
     header: null,
     };
     selectItem = (item) => {
-      this.setState({ selectedItem: item })
+      return new Promise((resolve, reject) => {
+      this.setState({ selectedItem: item }, resolve())
+      })
     }
     deleteItem = (item) => {
       let itemObj = {...item, ...{type: "events"}}

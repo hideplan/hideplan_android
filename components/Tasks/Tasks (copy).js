@@ -7,7 +7,8 @@ import { sendPost, sendPostAsync } from '../../functions.js';
 import NavigationService from '../../NavigationService.js';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { AsyncStorage } from "react-native"
-import CryptoJS from "react-native-crypto-js";
+import CryptoJS from "crypto-js";
+
 import { HeaderIcon, FabIcon, ActionBar } from '../../customComponents.js';
 import { Button, Container, Header, Left, Body, Right, Icon, Title, Content, Fab, ListItem, CheckBox, Tab, Tabs, TabHeading, SwipeRow } from 'native-base';
 import { Toast } from '../../customComponents.js';

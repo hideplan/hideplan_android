@@ -93,6 +93,7 @@ class TaskInput extends React.Component {
   }
   convertToText = (time) => {
     let valueForEncryption = {reminder: this.state.reminderValue.toString(), text: this.state.text, list: this.props.tagName.uuid, timestamp: time, isChecked: this.props.item.isChecked};
+
     return valueForEncryption;
   }
   editTask = () => {
@@ -103,14 +104,14 @@ class TaskInput extends React.Component {
         if (this.props.tagName.shared == true) {
     
           this.props.findPassword(this.props.tagName.uuid).then(data => 
-            encryptDataPromise(`{"reminder": "${this.state.reminderValue.toString()}", "text": "${this.state.text}", "list": "${this.props.tagName.uuid}", "isChecked": "${this.props.item.isChecked}", "isFavourite": "${this.props.item.isFavourite}", "updated": "${timestamp}", "shared": "true" }`, data.password).then(encResult => {
+            encryptDataPromise(`{"reminder": "${this.state.reminderValue.toString()}", "text": "${this.state.text}", "list": "${this.props.tagName.uuid}", "isChecked": ${this.props.item.isChecked}, "isFavourite": ${this.props.item.isFavourite}, "updated": "${timestamp}", "shared": "true" }`, data.password).then(encResult => {
               this.props.editItem({
                 "uuid": this.props.item.uuid, "data": encResult, "updated": timestamp, "parrent": listId, "shared": "true", "type": "tasks", "needSync": "true"}, {"dateFrom": "", "uuid": this.props.item.uuid, "text": this.state.text, "isChecked": this.props.item.isChecked, "isFavourite": this.props.item.isFavourite, "list": listId, "reminder": this.state.reminderValue.toString() }, "tasks", "Task created")
             })
           )
         } else {
-           dataForEncryption = this.convertToText()
-           encryptedData = encryptData(`{"reminder": "${this.state.reminderValue.toString()}", "text": "${this.state.text}", "list": "${this.props.tagName.uuid}", "isChecked": "${this.props.item.isChecked}", "isFavourite": "${this.props.item.isFavourite}", "updated": "${timestamp}", "shared": "false"}`, this.props.cryptoPassword)
+           dataForEncryption = this.convertToText(timestamp)
+           encryptedData = encryptData(`{"reminder": "${this.state.reminderValue.toString()}", "text": "${this.state.text}", "list": "${this.props.tagName.uuid}", "isChecked": ${this.props.item.isChecked}, "isFavourite": ${this.props.item.isFavourite}, "updated": "${timestamp}", "shared": "false"}`, this.props.cryptoPassword)
            this.props.editItem({
             "uuid": this.props.item.uuid, "data": encryptedData, "updated": timestamp, "parrent": listId, "shared": "false", "type": "tasks", "needSync": "true"}, {"dateFrom": "", "uuid": this.props.item.uuid, "text": this.state.text, "isChecked": this.props.item.isChecked, "isFavourite": this.props.item.isFavourite, "list": listId, "reminder": this.state.reminderValue.toString() }, "tasks", "Task created")
          

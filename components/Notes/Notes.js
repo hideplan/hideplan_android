@@ -278,9 +278,13 @@ _onRefresh = () => {
   this.setState({refreshing: true});
   this.props.refreshData().then(() => {
     this.setState({refreshing: false});
-  });
-}
+  }).catch((error) => {
 
+    this.setState({refreshing: false});
+
+    console.log(error)
+  })
+}
 
   filterNotebooks = () => {
     let data = this.props.data
@@ -342,7 +346,7 @@ _onRefresh = () => {
       onLongPress={() => {this.props.selectItem(note),
         this.props.BottomSheetMenu.open()
       }}
-      onPress={() => { NavigationService.navigate('NoteDetails', { text: note.text, uuid: note.uuid, title: note.title, notebook: note.notebook, type: "notes", updated:note.updated })  }}
+      onPress={() => { NavigationService.navigate('NoteDetails', { text: note.text, uuid: note.uuid, title: note.title, notebook: note.notebook, type: "notes", updated:note.updated, "isFavourite": note.isFavourite })  }}
       background={TouchableNativeFeedback.Ripple('gray', false)}
       >
           <View style={noteBox}>

@@ -28,12 +28,12 @@ class NoteInput extends React.Component {
       uuid: "",
       notebook: "",
       hasChanged: false,
-
+      isFavourite: "",
     };
   }
 
   convertToText = (time) => {
-    let valueForEncryption = {title: this.state.title, text: this.state.text, notebook: this.props.notebookName.uuid, timestamp: time};
+    let valueForEncryption = {title: this.state.title, text: this.state.text, notebook: this.props.notebookName.uuid, timestamp: time, isFavourite: this.state.isFavourite };
     return valueForEncryption;
   }
   triggerChange = () => {
@@ -48,7 +48,7 @@ class NoteInput extends React.Component {
 
       this.props.editItem({
         "uuid": this.state.uuid, "data": encryptedData, "updated": noteTimestamp, "type": "notes", "shared": "", "invited": "", "parrent": this.props.notebookName.uuid, "isLocal": "true" }, {
-          "uuid": this.state.uuid, "title": this.state.title, "text": this.state.text, "notebook": this.props.notebookName.uuid, "updated": noteTimestamp
+          "uuid": this.state.uuid, "title": this.state.title, "text": this.state.text, "notebook": this.props.notebookName.uuid, "updated": noteTimestamp, "isFavourite": this.state.isFavourite
         }, "notes", "Note created")
       /*
     sendPost("https://api.hideplan.com/edit/note", {
@@ -63,7 +63,7 @@ class NoteInput extends React.Component {
 
   
   componentWillMount() {
-    this.setState({ title: this.props.noteData.title, text: this.props.noteData.text, uuid: this.props.noteData.uuid, notebook: this.props.noteData.notebook })
+    this.setState({ title: this.props.noteData.title, text: this.props.noteData.text, uuid: this.props.noteData.uuid, notebook: this.props.noteData.notebook, isFavourite: this.props.noteData.isFavourite })
   }
 
 

@@ -179,7 +179,7 @@ timePicker = async() => {
   
     let eventReminder = this.getEventReminder();
     Keyboard.dismiss()
-    let valueForEncryption = {reminder: this.state.reminder, text: this.state.text, list: this.state.list.uuid, isChecked: false }
+    let valueForEncryption = {reminder: this.state.reminder, text: this.state.text, list: this.state.list.uuid, isChecked: false, isFavourite: false }
     return valueForEncryption;
   }
 
@@ -195,7 +195,7 @@ timePicker = async() => {
     let timestamp = new Date().getTime()
     let listId = this.state.list.uuid
     this.props.saveNewItem({
-      "id": createLocalId(), "data": encryptedData, "updated": timestamp, "parrent": listId, "type": "tasks", "isLocal": "true"}, {"dateFrom": this.state.date.toString(), "id": createLocalId(), "text": this.state.text, "isChecked": false, "list": this.state.list.uuid, "reminder": this.getEventReminder() }, "tasks", "Task created")
+      "id": createLocalId(), "data": encryptedData, "updated": timestamp, "parrent": listId, "type": "tasks", "isLocal": "true"}, {"dateFrom": this.state.date.toString(), "id": createLocalId(), "text": this.state.text, "isChecked": false, "isFavourite": false, "list": this.state.list.uuid, "reminder": this.getEventReminder() }, "tasks", "Task created")
       NavigationService.navigate('Tasks')
   }
     /*

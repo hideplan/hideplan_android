@@ -470,7 +470,9 @@ function formatTime(dateFrom, dateTill) {
               <View style={{paddingLeft: 12, paddingRight: 12, paddingTop: 12}}>
 
               <TouchableNativeFeedback 
-onPress={() => { this.props.BottomSheetMenu.open(), this.props.selectItem(item) }}
+onPress={() => { this.props.selectItem(item).then(() => {
+  this.props.BottomSheetMenu.open()
+})  }}
 
 >
  <View style={{height: 60, width: "100%", borderRadius: 8,backgroundColor: this.props.darkTheme ? "#515059" : "lightgray", margin: 0, padding: 0, flexDirection: "row"}}>
@@ -640,8 +642,11 @@ onPress={() => { this.props.BottomSheetMenu.open(), this.props.selectItem(item) 
         <View style={{ width: "100%", height: 60, borderRadius: 12, backgroundColor: this.props.darkTheme ? "#515059" : "silver",
           }}>
         
-        <TouchableNativeFeedback
-onPress={() => { this.props.selectItem(item), this.props.BottomSheetMenu.open()} }
+        <TouchableNativeFeedback 
+onPress={() => { this.props.selectItem(item).then(() => {
+  this.props.BottomSheetMenu.open()
+})  }}
+
 >
 <View style={twoColumnStyle}>
               
@@ -721,8 +726,10 @@ justifyContent: "center",}}>
         return       <View style={{paddingLeft: 12, paddingRight: 12, paddingTop: 12}}>
 
         <TouchableNativeFeedback 
-    onLongPress={() => {this.props.selectItem(note),
+    onLongPress={() => {this.props.selectItem(note).then(() => {
       this.props.BottomSheetMenu.open()
+    })
+      
     }}
     onPress={() => { NavigationService.navigate('NoteDetails', { text: note.text, uuid: note.uuid, title: note.title, notebook: note.notebook, type: "notes", updated:note.updated })  }}
     background={TouchableNativeFeedback.Ripple('gray', false)}
@@ -1130,7 +1137,9 @@ export default class HomeScreen extends React.Component {
     }
 
     selectItem = (item) => {
-      this.setState({ selectedItem: item })
+      return new Promise((resolve, reject) => {
+      this.setState({ selectedItem: item }, resolve())
+      })
     }
     renderEditButton = (item) => {
       if (item.list) {

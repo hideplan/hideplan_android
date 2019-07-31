@@ -2,7 +2,7 @@ import React from "react";
 //import "./Register.css";
 import { View, Text, TextInput, StyleSheet, ScrollView, TouchableHighlight, Alert, TouchableNativeFeedback, TouchableWithoutFeedback, Button, TimePickerAndroid, DatePickerAndroid, Switch, Dimensions } from "react-native"
 import { Keyboard } from 'react-native'
-import CryptoJS from "react-native-crypto-js";
+import CryptoJS from "crypto-js";
 import { sendPost, hashForComparingChanges } from '../../functions.js';
 import dateFns, { addHours, setMinutes, subMinutes, subHours, getYear, getMonth, getHours, getDate, isBefore, getMinutes } from "date-fns";
 var PushNotification = require('react-native-push-notification');
@@ -272,8 +272,9 @@ class Event extends React.Component {
     }
   
     let eventReminder = this.getEventReminder();
+    console.log(eventReminder)
     Keyboard.dismiss()
-    let valueForEncryption = {dateFrom: this.state.dateFrom.toString(), dateTill: this.state.dateTill.toString(), text: this.state.text, location: this.state.location, notes: this.state.notes, reminder: eventReminder.toString(), calendar: this.props.selectedCalendar.uuid, repeat: this.state.repeat, repeated: repeatedValue, isFavourite: false}
+    let valueForEncryption = {dateFrom: this.state.dateFrom.toString(), dateTill: this.state.dateTill.toString(), text: this.state.text, location: this.state.location, notes: this.state.notes, reminder: eventReminder.toString(), calendar: this.props.selectedCalendar.uuid, repeat: this.state.repeat, repeated: repeatedValue, remindBefore: this.state.reminderValue, isFavourite: false}
     return valueForEncryption;
   }
 
@@ -290,7 +291,7 @@ class Event extends React.Component {
     let uuid = createId("events")
 
     this.props.saveNewItem({
-      "uuid": uuid, "data": encryptedData, "updated": timestamp, "parrent": this.props.selectedCalendar.uuid, "shared": "", type: "events", "isLocal": "true", "needSync": "true" }, {"uuid": uuid, "dateFrom": this.state.dateFrom.toString(), "dateTill": this.state.dateTill.toString(), "uuid": uuid, "text": this.state.text, "location": this.state.location, "notes": this.state.notes, "reminder": this.getEventReminder(), "calendar": this.props.selectedCalendar.uuid, "updated": timestamp, repeat: this.state.repeat, isFavourite: false
+      "uuid": uuid, "data": encryptedData, "updated": timestamp, "parrent": this.props.selectedCalendar.uuid, "shared": "", type: "events", "isLocal": "true", "needSync": "true" }, {"uuid": uuid, "dateFrom": this.state.dateFrom.toString(), "dateTill": this.state.dateTill.toString(), "uuid": uuid, "text": this.state.text, "location": this.state.location, "notes": this.state.notes, "reminder": this.getEventReminder(), "calendar": this.props.selectedCalendar.uuid, "updated": timestamp, repeat: this.state.repeat, remindBefore: this.state.reminderValue, isFavourite: false
       }, "events", "Event created")
       NavigationService.navigate('Calendar')
 

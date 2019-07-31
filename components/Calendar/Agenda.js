@@ -191,7 +191,12 @@ class Event extends React.Component {
     this.setState({refreshing: true});
     this.props.refreshData().then(() => {
       this.setState({refreshing: false});
-    });
+    }).catch((error) => {
+  
+      this.setState({refreshing: false});
+  
+      console.log(error)
+    })
   }
   deleteEventFromServer = (id) => {
     //Send request to server to delete event based on id

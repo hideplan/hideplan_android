@@ -5,7 +5,7 @@ import { AsyncStorage } from "react-native"
 import { Content, Form, Item, Label, Button, Icon } from 'native-base';
 import { Input, LabelBottom, FormButton, BasicButton } from '../../customComponents.js';
 import NavigationService from '../../NavigationService.js';
-import CryptoJS from "react-native-crypto-js";
+import CryptoJS from "crypto-js";
 import { saveToKeychain, decryptDataCheckPromise } from '../../encryptionFunctions';
 import { Toast } from '../../customComponents.js';
 

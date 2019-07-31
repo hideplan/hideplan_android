@@ -7,7 +7,7 @@ import { sendPost, sendPostAsync } from '../../functions.js';
 import NavigationService from '../../NavigationService.js';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { AsyncStorage } from "react-native"
-import CryptoJS from "react-native-crypto-js";
+import CryptoJS from "crypto-js";
 import { HeaderIcon, FabIcon, ActionBar } from '../../customComponents.js';
 import { Container, Header, Left, Body, Right, Icon, Title, Content, Fab, ListItem, CheckBox, Tab, Tabs, TabHeading, SwipeRow } from 'native-base';
 import { Toast } from '../../customComponents.js';
@@ -20,7 +20,6 @@ import { YellowBox } from 'react-native';
 YellowBox.ignoreWarnings(['Warning: ...']);
 <script src="http://localhost:8097"></script>
 console.disableYellowBox = true;
-import RBSheet from "react-native-raw-bottom-sheet";
 import { BottomSheet, BottomSheetExpanded } from '../../bottomSheet/BottomSheet.js';
 const WIDTH = Dimensions.get('window').width;
 const HEIGHT = Dimensions.get('window').height;
@@ -597,7 +596,12 @@ class Task extends React.Component {
     this.setState({refreshing: true});
     this.props.refreshData().then(() => {
       this.setState({refreshing: false});
-    });
+    }).catch((error) => {
+
+      this.setState({refreshing: false});
+
+      console.log(error)
+    })
   }
 
 
@@ -618,7 +622,9 @@ class Task extends React.Component {
   }
   
 
-
+  componentDidMount () {
+    this.props.findDefaultList()
+  }
   render() {
 
     const normalText = {
@@ -670,9 +676,11 @@ class Task extends React.Component {
             
  
               <View style={{paddingLeft: 12, paddingRight: 12, paddingTop: 12}}>
-
+                
                                <TouchableNativeFeedback 
-              onPress={() => { this.props.BottomSheetMenu.open(), this.props.selectItem(item) }}
+              onPress={() => { this.props.selectItem(item).then(() => {
+                this.props.BottomSheetMenu.open()
+              }) }}
              
               >
                   <View style={{height: 60, width: "100%", borderRadius: 8,backgroundColor: this.props.darkTheme ? "#515059" : "lightgray", margin: 0, padding: 0, flexDirection: "row"}}>
@@ -849,9 +857,7 @@ class TasksMain extends React.Component {
     this.props.filterTasksOnDemand(selectedTag)
   }
 
-  componentDidMount () {
-    this.props.findDefaultList()
-  }
+ 
   filterMarked = (data) => {
     //Filter old events and sort them
 
@@ -876,6 +882,7 @@ class TasksMain extends React.Component {
             deleteItem={this.props.deleteItem}
             refreshData={this.props.refreshData}
             selectItem={this.props.selectItem}            forceUpdateCount={this.props.forceUpdateCount}
+            findDefaultList={this.props.findDefaultList}
             BottomSheetMenu={this.props.BottomSheetMenu}
           />
         
@@ -940,7 +947,10 @@ export default class TasksScreen extends React.Component {
   }
 
   selectItem = (item) => {
-    this.setState({ selectedItem: item })
+    return new Promise((resolve, reject) => {
+
+    this.setState({ selectedItem: item }, resolve())
+    })
   }
 
   saveList = (listName, privateState) => {
@@ -1048,6 +1058,10 @@ export default class TasksScreen extends React.Component {
    //setTimeout(() => {NavigationService.navigate('Settings')}, 500)
     //Default title
   }
+  componentWillMount () {
+    this.props.screenProps.findDefaultList()
+
+  }
 
   //"x6brfvdkpnzhmps" "472450417li1556"
   //"bsm988iyl0ekxzc" "480305802li1556"
@@ -1135,8 +1149,81 @@ export default class TasksScreen extends React.Component {
             </Right>
 
 </Header>
+<BottomSheet
+          ref={ref => {
+            this.BottomSheetMenu = ref;
+          }}
+          height={168}
+          duration={200}
+          closeOnSwipeDown={true}
+          darkTheme={this.props.screenProps.darkTheme}
+          customStyles={{
+            container: {
+              
+              borderTopLeftRadius: 12,
+              borderTopRightRadius: 12,
+              backgroundColor: this.props.darkTheme ? "#17191d" : "mintcream",
+              elevation: 8
+            }
+          }}
+        >
+       <ScrollView style={{flex: 1, backgroundColor: this.props.screenProps.darkTheme ? "#17191d" : "mintcream", paddingTop: 10, paddingBottom: 10}}>
+       <TouchableNativeFeedback 
+        onPress={() => {this.BottomSheetMenu.close(), this.triggerFavourite(this.state.selectedItem) }}>
+          <View style={{  width: "100%",
+      flexDirection: "row", paddingLeft: 20, paddingRight: 20, paddingTop: 10, paddingBottom: 10}}>
+      <View style={{width: "10%", justifyContent: "center"}}>
+        <Ionicons name="md-add" size={26} color={this.props.screenProps.darkTheme ? "mintcream" : "#0F0F0F"} />
+        </View>
+        <View style={{width: "90%", justifyContent: "center"}}>
+         {this.state.selectedItem.isFavourite
+        ?<Text style={{ color: this.props.screenProps.darkTheme ? "mintcream" : "#0F0F0F",
+      fontSize: 16,
+      fontFamily: 'Poppins-Regular', includeFontPadding: false}}>Remove from favourites</Text>
+      : <Text style={{ color: this.props.screenProps.darkTheme ? "mintcream" : "#0F0F0F",
+      fontSize: 16,
+      fontFamily: 'Poppins-Regular', includeFontPadding: false}}>Add to favourites</Text>
+         }
+        </View>
+        </View>
+       
+        </TouchableNativeFeedback>
+        <TouchableNativeFeedback 
+        onPress={() => {this.BottomSheetMenu.close(), NavigationService.navigate('EditTask', this.state.selectedItem)}}>
+           <View style={{  width: "100%",
+      flexDirection: "row", paddingLeft: 20, paddingRight: 20, paddingTop: 10, paddingBottom: 10}}>
+      <View style={{width: "10%", justifyContent: "center"}}>
+        <Ionicons name="md-create" size={26} color={this.props.screenProps.darkTheme ? "mintcream" : "#0F0F0F"} />
+        </View>
+        <View style={{width: "90%", justifyContent: "center"}}>
+        <Text style={{ color: this.props.screenProps.darkTheme ? "mintcream" : "#0F0F0F",
+      fontSize: 16,
+      fontFamily: 'Poppins-Regular', includeFontPadding: false}}>Edit task</Text>
+     
+        </View>
+        </View>
+       
+        </TouchableNativeFeedback>
+        <TouchableNativeFeedback 
+        onPress={() => {this.BottomSheetMenu.close(), this.deleteAlert(this.state.selectedItem.text, this.state.selectedItem)}}>
+                     <View style={{  width: "100%",
+      flexDirection: "row", paddingLeft: 20, paddingRight: 20, paddingTop: 10, paddingBottom: 10}}>
+      <View style={{width: "10%", justifyContent: "center"}}>
+        <Ionicons name="md-trash" size={26} color={this.props.screenProps.darkTheme ? "mintcream" : "#0F0F0F"} />
+        </View>
+        <View style={{width: "90%", justifyContent: "center"}}>
+        <Text style={{ color: this.props.screenProps.darkTheme ? "mintcream" : "#0F0F0F",
+      fontSize: 16,
+      fontFamily: 'Poppins-Regular', includeFontPadding: false}}>Delete task</Text>
+     
+        </View>
+        </View>
+       
+        </TouchableNativeFeedback>
+          </ScrollView>
 
-        {this.props.screenProps.isLoadingData == false && this.props.screenProps.defaultList && this.props.screenProps.tagName && this.props.screenProps.tasks 
+        </BottomSheet>
+        { this.props.screenProps.defaultList && this.props.screenProps.tagName && this.props.screenProps.tasks
           ?  <TasksMain
             ref={this.child}
             tasks={this.props.screenProps.tasks}
@@ -1234,81 +1321,8 @@ export default class TasksScreen extends React.Component {
       onPress={() => { this.BottomSheet.open() }}>
       <Icon name="add" />
       </Fab>
-  
-                    <BottomSheet
-          ref={ref => {
-            this.BottomSheetMenu = ref;
-          }}
-          height={168}
-          duration={200}
-          closeOnSwipeDown={true}
-          darkTheme={this.props.screenProps.darkTheme}
-          customStyles={{
-            container: {
-              
-              borderTopLeftRadius: 12,
-              borderTopRightRadius: 12,
-              backgroundColor: this.props.darkTheme ? "#17191d" : "mintcream",
-              elevation: 8
-            }
-          }}
-        >
-       <ScrollView style={{flex: 1, backgroundColor: this.props.screenProps.darkTheme ? "#17191d" : "mintcream", paddingTop: 10, paddingBottom: 10}}>
-       <TouchableNativeFeedback 
-        onPress={() => {this.BottomSheetMenu.close(), this.triggerFavourite(this.state.selectedItem) }}>
-          <View style={{  width: "100%",
-      flexDirection: "row", paddingLeft: 20, paddingRight: 20, paddingTop: 10, paddingBottom: 10}}>
-      <View style={{width: "10%", justifyContent: "center"}}>
-        <Ionicons name="md-add" size={26} color={this.props.screenProps.darkTheme ? "mintcream" : "#0F0F0F"} />
-        </View>
-        <View style={{width: "90%", justifyContent: "center"}}>
-         {this.state.selectedItem.isFavourite
-        ?<Text style={{ color: this.props.screenProps.darkTheme ? "mintcream" : "#0F0F0F",
-      fontSize: 16,
-      fontFamily: 'Poppins-Regular', includeFontPadding: false}}>Remove from favourites</Text>
-      : <Text style={{ color: this.props.screenProps.darkTheme ? "mintcream" : "#0F0F0F",
-      fontSize: 16,
-      fontFamily: 'Poppins-Regular', includeFontPadding: false}}>Add to favourites</Text>
-         }
-        </View>
-        </View>
-       
-        </TouchableNativeFeedback>
-        <TouchableNativeFeedback 
-        onPress={() => {this.BottomSheetMenu.close(), NavigationService.navigate('EditTask', this.state.selectedItem)}}>
-           <View style={{  width: "100%",
-      flexDirection: "row", paddingLeft: 20, paddingRight: 20, paddingTop: 10, paddingBottom: 10}}>
-      <View style={{width: "10%", justifyContent: "center"}}>
-        <Ionicons name="md-create" size={26} color={this.props.screenProps.darkTheme ? "mintcream" : "#0F0F0F"} />
-        </View>
-        <View style={{width: "90%", justifyContent: "center"}}>
-        <Text style={{ color: this.props.screenProps.darkTheme ? "mintcream" : "#0F0F0F",
-      fontSize: 16,
-      fontFamily: 'Poppins-Regular', includeFontPadding: false}}>Edit task</Text>
-     
-        </View>
-        </View>
-       
-        </TouchableNativeFeedback>
-        <TouchableNativeFeedback 
-        onPress={() => {this.BottomSheetMenu.close(), this.deleteAlert(this.state.selectedItem.text, this.state.selectedItem)}}>
-                     <View style={{  width: "100%",
-      flexDirection: "row", paddingLeft: 20, paddingRight: 20, paddingTop: 10, paddingBottom: 10}}>
-      <View style={{width: "10%", justifyContent: "center"}}>
-        <Ionicons name="md-trash" size={26} color={this.props.screenProps.darkTheme ? "mintcream" : "#0F0F0F"} />
-        </View>
-        <View style={{width: "90%", justifyContent: "center"}}>
-        <Text style={{ color: this.props.screenProps.darkTheme ? "mintcream" : "#0F0F0F",
-      fontSize: 16,
-      fontFamily: 'Poppins-Regular', includeFontPadding: false}}>Delete task</Text>
-     
-        </View>
-        </View>
-       
-        </TouchableNativeFeedback>
-          </ScrollView>
+    
 
-        </BottomSheet>
         <Drawer
                     ref={ref => {
                       this.Drawer = ref;

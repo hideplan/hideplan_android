@@ -2,7 +2,7 @@ import React from "react";
 //import "./Register.css";
 import { Button, View, Text, TextInput, StyleSheet, TouchableOpacity, Alert, Picker } from "react-native"
 import { Keyboard } from 'react-native'
-import CryptoJS from "react-native-crypto-js";
+import CryptoJS from "crypto-js";
 import {sendPost} from '../../functions.js';
 import dateFns, { addHours, setMinutes, subMinutes } from "date-fns";
 var PushNotification = require('react-native-push-notification');

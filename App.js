@@ -51,7 +51,7 @@ import dateFns, { isAfter, isFuture, getISOWeek, getMinutes, getHours, getDay, g
 
 import * as Keychain from 'react-native-keychain';
 
-import CryptoJS from "react-native-crypto-js";
+import CryptoJS from "crypto-js";
 import { sendPost, sendPostAsync } from './functions.js';
 var PushNotification = require('react-native-push-notification');
 import NavigationService from './NavigationService';
@@ -184,7 +184,7 @@ const TabNavigator = createMaterialBottomTabNavigator({
     },
 
 }, {
-  initialRouteName: 'Calendar',
+  initialRouteName: 'Tasks',
  
   activeColor: "royalblue",
   inactiveColor: 'dimgray',
@@ -241,7 +241,7 @@ const TabNavigatorDark = createMaterialBottomTabNavigator({
     },
 
 }, {
-  initialRouteName: 'Calendar',
+  initialRouteName: 'Tasks',
  
   activeColor: 'dodgerblue',
   inactiveColor: '#929390',
@@ -552,7 +552,11 @@ export default class App extends React.Component {
             this.deleteOldData().then(() => {
               this.uploadLocalData().then(() => {
                 this.fetchEventsFromServer().then(() => {
-                  this.fetchEventsFromLocal().then(() => this.interval = setInterval(() => {this.checkUpdates()}, 8000000)
+                  this.fetchEventsFromLocal().then(() => {
+                    this.setState({ isLoadingData: false })
+                  }
+
+                    //this.interval = setInterval(() => {this.checkUpdates()}, 8000000)
                   ).catch((error) => {
                     console.log(error)
                     this.setState({ isLoadingData: false })
@@ -756,6 +760,25 @@ export default class App extends React.Component {
     }
     return true
   }
+  wasDeleted = (localData, serverData) => {
+
+    let arrayForDeletion = []
+    for (let i = 0; i < localData.length; i++) {
+      if (serverData.find(item => item.uuid === localData[i].uuid)) {
+      } else {
+        arrayForDeletion.push(localData[i])
+          //alert("Event was deleted")
+          //NavigationService.navigate('EventListScreen')
+
+          //Delete event from state
+
+
+        }
+      }
+      arrayForDeletion.forEach(item => {
+        this.deleteItemLocal(item)
+      })
+      }
 
   isInServerStorage = (localData, serverData) => {
     //Check if all local data are also in server storage
@@ -777,7 +800,6 @@ export default class App extends React.Component {
     let arrayForDeletion = [] //Array to store old items
 
     for (let i = 0; i < localData.length; i++) {
-
         if (serverData.find(item => item.uuid === localData[i].uuid)) {
         } else {
           this.deleteItemLocal(localData[i])
@@ -830,7 +852,7 @@ fetchEventsFromServer = () => {
     let settingsNotebookLoaded = false
     let settingsThemeLoaded = false
   this.sqlGetAll().then(dataSql => {
-
+      
         const url = "https://api.hideplan.com/fetch/data";
 
         fetch(url,
@@ -851,7 +873,6 @@ fetchEventsFromServer = () => {
           })
           .then(
             data => {
-              console.log(data)
               //this.isInServerStorage("noteId", dataSql.notes, data.notes)
             //  this.isInServerStorage("calendarId", dataSql.calendars, data.calendars)
 
@@ -864,13 +885,24 @@ fetchEventsFromServer = () => {
                   if (this.notInLocalStorage(item.uuid, dataSql.events)) {
 
                     this.sqlInsert("events", "uuid, data, updated, type, shared, parrent, needSync", [item.uuid, item.data, item.updated, "events", item.shared, item.parrent, "false"])
-                  } /*else {
-                //Update local item if server side hash is different then local
-                
-                if (this.hasChangedOnServer(`eventId${oneEvent.uuid}`, oneEvent.hash, result.rows) ){
-                  this.updateLocalData(`eventId${oneEvent.uuid}`, { "id": oneEvent.uuid, dateFrom: oneEvent.dateFrom, "data": oneEvent.event, hash: oneEvent.hash })
-                }
-              } */
+                  } else {
+                    this.needUpdate(item).then(res => {
+                      if (res) {
+  
+                        let querySql = `UPDATE ${item.type} SET data = '${item.data}', updated = '${item.updated}', needSync = 'false' WHERE uuid = '${item.uuid}'`
+                        db.transaction(tx => {
+                          tx.executeSql(
+                            querySql,
+                            [],
+                            (tx, results) => {
+                                let decryptedData = this.decryptSqlData(item.uuid, item.data, this.state.cryptoPassword)
+                                this.updateStateData("events", decryptedData)
+                            }
+                          )
+                        })
+                      }
+                    })
+                  }
               if (index + 1 == data.events.length) {
                 eventsLoaded = true
                 
@@ -888,6 +920,28 @@ fetchEventsFromServer = () => {
                   if (this.notInLocalStorage(item.uuid, dataSql.calendars)) {
                     //this.saveeventsToLocal(`calendarId${oneCalendar.uuid}`, { "id": oneCalendar.uuid, "data": oneCalendar.data, "updated": oneCalendar.updated, "type": "calendar", "needSync": false })
                     this.sqlInsert("calendars", "uuid, data, updated, type, shared, parrent, needSync", [item.uuid, item.data, item.updated, "calendars", item.shared, item.parrent, "false"])
+                  }else {
+                    this.needUpdate(item).then(res => {
+                      if (res) {
+  
+                        let querySql = `UPDATE ${item.type} SET data = '${item.data}', updated = '${item.updated}', needSync = 'false' WHERE uuid = '${item.uuid}'`
+                        db.transaction(tx => {
+                          tx.executeSql(
+                            querySql,
+                            [],
+                            (tx, results) => {
+                                let decryptedData = this.decryptSqlData(item.uuid, item.data, this.state.cryptoPassword)
+                                this.updateStateData("calendars", decryptedData)
+                              
+                    
+                             
+  
+  
+                            }
+                          )
+                        })
+                      }
+                    })
                   }
                 })
               
@@ -1053,7 +1107,29 @@ fetchEventsFromServer = () => {
                 if (this.notInLocalStorage(item.uuid, dataSql.notes)) {
                   this.sqlInsert("notes", "uuid, data, updated, type, shared, parrent, needSync", [item.uuid, item.data, item.updated, "notes", item.shared, item.parrent, "false"])
 
-                } /*else {
+                } else {
+                  this.needUpdate(item).then(res => {
+                    if (res) {
+
+                      let querySql = `UPDATE ${item.type} SET data = '${item.data}', updated = '${item.updated}', needSync = 'false' WHERE uuid = '${item.uuid}'`
+                      db.transaction(tx => {
+                        tx.executeSql(
+                          querySql,
+                          [],
+                          (tx, results) => {
+                              let decryptedData = this.decryptSqlData(item.uuid, item.data, this.state.cryptoPassword)
+                              this.updateStateData("notes", decryptedData)
+                            
+                  
+                           
+
+
+                          }
+                        )
+                      })
+                    }
+                  })
+                }/*else {
               //Check if stored item was changed on server
               if (this.hasChangedOnServer(`taskId${oneTask.uuid}`, oneTask.hash, result.rows) ){
                 this.updateLocalData(`taskId${oneTask.uuid}`, { "id": oneTask.uuid, "data": oneTask.task, hash: oneTask.hash })
@@ -1068,7 +1144,29 @@ fetchEventsFromServer = () => {
                 if (this.notInLocalStorage(item.uuid, dataSql.notebooks)) {
                   this.sqlInsert("notebooks", "uuid, data, updated, type, shared, parrent, needSync", [item.uuid, item.data, item.updated, "notebooks", item.shared, item.parrent, "false"])
 
-                } /*else {
+                } else {
+                  this.needUpdate(item).then(res => {
+                    if (res) {
+
+                      let querySql = `UPDATE ${item.type} SET data = '${item.data}', updated = '${item.updated}', needSync = 'false' WHERE uuid = '${item.uuid}'`
+                      db.transaction(tx => {
+                        tx.executeSql(
+                          querySql,
+                          [],
+                          (tx, results) => {
+                              let decryptedData = this.decryptSqlData(item.uuid, item.data, this.state.cryptoPassword)
+                              this.updateStateData("notebooks", decryptedData)
+                            
+                  
+                           
+
+
+                          }
+                        )
+                      })
+                    }
+                  })
+                }/*else {
               //Check if stored item was changed on server
               if (this.hasChangedOnServer(`taskId${oneTask.uuid}`, oneTask.hash, result.rows) ){
                 this.updateLocalData(`taskId${oneTask.uuid}`, { "id": oneTask.uuid, "data": oneTask.task, hash: oneTask.hash })
@@ -1133,7 +1231,364 @@ fetchEventsFromServer = () => {
 
 }
 
+///Refresh function
 
+refreshDataFromServer = () => {
+
+  return new Promise((resolve, reject) => {
+    let eventsLoaded = false
+    let tasksLoaded = false
+    let settingsLoaded = false
+    let settingsListLoaded = false
+    let settingsCalendarLoaded = false
+    let settingsNotebookLoaded = false
+    let settingsThemeLoaded = false
+  this.sqlGetAll().then(dataSql => {
+      console.log(dataSql)
+        const url = "https://api.hideplan.com/fetch/data";
+
+        fetch(url,
+          {
+            method: 'GET',
+            credentials: 'include',
+          }).catch ((error) => {
+            this.createToast("Connection error", "warning", 4000)
+            console.log(error);
+            reject()
+          })
+          
+          .then(response => response.json())
+          .catch ((error) => {
+            this.createToast("Connection error", "warning", 4000)
+            console.log(error);
+            reject()
+          })
+          .then(
+            data => {
+              //this.isInServerStorage("noteId", dataSql.notes, data.notes)
+            //  this.isInServerStorage("calendarId", dataSql.calendars, data.calendars)
+
+           //   this.isInServerStorage("eventId", dataSql.events, data.events)
+            //  this.isInServerStorage("taskId", dataSql.tasks, data.tasks)
+
+            this.wasDeleted(dataSql.events, data.events)
+
+                data.events.map((item, index) => {
+                  //add only new data to local storage
+                  if (this.notInLocalStorage(item.uuid, dataSql.events)) {
+
+                    this.sqlInsert("events", "uuid, data, updated, type, shared, parrent, needSync", [item.uuid, item.data, item.updated, "events", item.shared, item.parrent, "false"])
+
+                    //Insert new item to state 
+                    let decryptedData = this.decryptSqlData(item.uuid, item.data, this.state.cryptoPassword)
+                    this.createNotification(decryptedData)
+                    this.setState(prevState => ({
+                      events: [...prevState.events, decryptedData]
+                    }))
+
+                  } else {
+                    this.needUpdate(item).then(res => {
+                      if (res) {
+  
+                        let querySql = `UPDATE ${item.type} SET data = '${item.data}', updated = '${item.updated}', needSync = 'false' WHERE uuid = '${item.uuid}'`
+                        db.transaction(tx => {
+                          tx.executeSql(
+                            querySql,
+                            [],
+                            (tx, results) => {
+                                let decryptedData = this.decryptSqlData(item.uuid, item.data, this.state.cryptoPassword)
+                                this.updateStateData("events", decryptedData)
+                            }
+                          )
+                        })
+                      }
+                    })
+                  
+
+                }
+              })
+
+              this.wasDeleted(dataSql.calendars, data.calendars)
+
+              data.calendars.map(item => {
+
+                //add only new data to local storage
+                  if (this.notInLocalStorage(item.uuid, dataSql.calendars)) {
+                    //this.saveeventsToLocal(`calendarId${oneCalendar.uuid}`, { "id": oneCalendar.uuid, "data": oneCalendar.data, "updated": oneCalendar.updated, "type": "calendar", "needSync": false })
+                    this.sqlInsert("calendars", "uuid, data, updated, type, shared, parrent, needSync", [item.uuid, item.data, item.updated, "calendars", item.shared, item.parrent, "false"])
+                      //Insert new item to state 
+                      let decryptedData = this.decryptSqlData(item.uuid, item.data, this.state.cryptoPassword)
+                      this.createNotification(decryptedData)
+                      this.setState(prevState => ({
+                        calendars: [...prevState.calendars, decryptedData]
+                      }))
+                  }else {
+                    this.needUpdate(item).then(res => {
+                      if (res) {
+  
+                        let querySql = `UPDATE ${item.type} SET data = '${item.data}', updated = '${item.updated}', needSync = 'false' WHERE uuid = '${item.uuid}'`
+                        db.transaction(tx => {
+                          tx.executeSql(
+                            querySql,
+                            [],
+                            (tx, results) => {
+                                let decryptedData = this.decryptSqlData(item.uuid, item.data, this.state.cryptoPassword)
+                                this.updateStateData("calendars", decryptedData)
+                              
+                    
+                             
+  
+  
+                            }
+                          )
+                        })
+                      }
+                    })
+                  }
+                })
+              
+                /* else {
+              //Update local item if server side hash is different then local
+              if (this.hasChangedOnServer(`calendarId${oneCalendar.uuid}`, oneCalendar.hash, result.rows) ){
+                this.updateLocalData(`calendarId${oneCalendar.uuid}`, { "id": oneCalendar.uuid, "data": oneCalendar.calendar, hash: oneCalendar.hash })
+              }
+            } */
+
+              this.wasDeleted(dataSql.tasks, data.tasks)
+              //this.isInServerStorage(dataSql.tasks, data.tasks)
+
+              data.tasks.map((item, index) => {
+                //add only new data to local storage
+                if (this.notInLocalStorage(item.uuid, dataSql.tasks)) {
+                  this.sqlInsert("tasks", "uuid, data, updated, type, shared, parrent, needSync", [item.uuid, item.data, item.updated, "tasks", item.shared, item.parrent, "false"])
+
+                    //Insert new item to state 
+                    let decryptedData = this.decryptSqlData(item.uuid, item.data, this.state.cryptoPassword)
+ 
+                    this.createNotification(decryptedData)
+                    this.setState(prevState => ({
+                      tasks: [...prevState.tasks, decryptedData]
+                    }))
+                } else {
+                  this.needUpdate(item).then(res => {
+                    if (res) {
+
+                      let querySql = `UPDATE ${item.type} SET data = '${item.data}', updated = '${item.updated}', needSync = 'false' WHERE uuid = '${item.uuid}'`
+                      db.transaction(tx => {
+                        tx.executeSql(
+                          querySql,
+                          [],
+                          (tx, results) => {
+                              let decryptedData = this.decryptSqlData(item.uuid, item.data, this.state.cryptoPassword)
+                              this.updateStateData("tasks", decryptedData)
+                            
+                  
+                           
+
+
+                          }
+                        )
+                      })
+                    }
+                  })
+                } /*else {
+              //Check if stored item was changed on server
+              if (this.hasChangedOnServer(`taskId${oneTask.uuid}`, oneTask.hash, result.rows) ){
+                this.updateLocalData(`taskId${oneTask.uuid}`, { "id": oneTask.uuid, "data": oneTask.task, hash: oneTask.hash })
+              }
+            }
+            */
+          })  
+
+
+          this.wasDeleted(dataSql.lists, data.lists)
+
+              data.lists.map((item, index) => {
+
+                //add only new data to local storage
+                if (this.notInLocalStorage(item.uuid, dataSql.lists)) {
+
+                  this.sqlInsert("lists", "uuid, data, updated, type, shared, parrent, needSync", [item.uuid, item.data, item.updated, "lists", item.shared, item.parrent, "false"])
+                    //Insert new item to state 
+                    let decryptedData = this.decryptSqlData(item.uuid, item.data, this.state.cryptoPassword)
+                    this.createNotification(decryptedData)
+                    this.setState(prevState => ({
+                      lists: [...prevState.lists, decryptedData]
+                    }))
+                }  else {
+                  this.needUpdate(item).then(res => {
+                    if (res) {
+
+                      let querySql = `UPDATE ${item.type} SET data = '${item.data}', updated = '${item.updated}', needSync = 'false' WHERE uuid = '${item.uuid}'`
+                      db.transaction(tx => {
+                        tx.executeSql(
+                          querySql,
+                          [],
+                          (tx, results) => {
+                            let decryptedData = this.decryptSqlData(item.uuid, item.data, this.state.cryptoPassword)
+                            this.updateStateData("lists", decryptedData)
+
+
+                          }
+                        )
+                      })
+                    }
+                  })
+                }/*else {
+              //Check if stored item was changed on server
+              if (this.hasChangedOnServer(`taskId${oneTask.uuid}`, oneTask.hash, result.rows) ){
+                this.updateLocalData(`taskId${oneTask.uuid}`, { "id": oneTask.uuid, "data": oneTask.task, hash: oneTask.hash })
+              }
+            }*/
+          
+              }
+
+              )
+
+              this.wasDeleted(dataSql.notes, data.notes)
+
+              data.notes.map((item, index) => {
+
+                //add only new data to local storage
+                if (this.notInLocalStorage(item.uuid, dataSql.notes)) {
+                  this.sqlInsert("notes", "uuid, data, updated, type, shared, parrent, needSync", [item.uuid, item.data, item.updated, "notes", item.shared, item.parrent, "false"])
+                   //Insert new item to state 
+                   let decryptedData = this.decryptSqlData(item.uuid, item.data, this.state.cryptoPassword)
+                   this.createNotification(decryptedData)
+                   this.setState(prevState => ({
+                    notes: [...prevState.notes, decryptedData]
+                   }))
+                } else {
+                  this.needUpdate(item).then(res => {
+                    if (res) {
+
+                      let querySql = `UPDATE ${item.type} SET data = '${item.data}', updated = '${item.updated}', needSync = 'false' WHERE uuid = '${item.uuid}'`
+                      db.transaction(tx => {
+                        tx.executeSql(
+                          querySql,
+                          [],
+                          (tx, results) => {
+                              let decryptedData = this.decryptSqlData(item.uuid, item.data, this.state.cryptoPassword)
+                              this.updateStateData("notes", decryptedData)
+                            
+                  
+                           
+
+
+                          }
+                        )
+                      })
+                    }
+                  })
+                }/*else {
+              //Check if stored item was changed on server
+              if (this.hasChangedOnServer(`taskId${oneTask.uuid}`, oneTask.hash, result.rows) ){
+                this.updateLocalData(`taskId${oneTask.uuid}`, { "id": oneTask.uuid, "data": oneTask.task, hash: oneTask.hash })
+              }
+            }*/
+
+              })
+              this.wasDeleted(dataSql.notebooks, data.notebooks)
+
+              data.notebooks.map((item, index) => {
+
+                //add only new data to local storage
+                if (this.notInLocalStorage(item.uuid, dataSql.notebooks)) {
+                  this.sqlInsert("notebooks", "uuid, data, updated, type, shared, parrent, needSync", [item.uuid, item.data, item.updated, "notebooks", item.shared, item.parrent, "false"])
+                  //Insert new item to state 
+                   let decryptedData = this.decryptSqlData(item.uuid, item.data, this.state.cryptoPassword)
+                   this.createNotification(decryptedData)
+                   this.setState(prevState => ({
+                    notebooks: [...prevState.notebooks, decryptedData]
+                   }))
+                } else {
+                  this.needUpdate(item).then(res => {
+                    if (res) {
+
+                      let querySql = `UPDATE ${item.type} SET data = '${item.data}', updated = '${item.updated}', needSync = 'false' WHERE uuid = '${item.uuid}'`
+                      db.transaction(tx => {
+                        tx.executeSql(
+                          querySql,
+                          [],
+                          (tx, results) => {
+                              let decryptedData = this.decryptSqlData(item.uuid, item.data, this.state.cryptoPassword)
+                              this.updateStateData("notebooks", decryptedData)
+                            
+                  
+                           
+
+
+                          }
+                        )
+                      })
+                    }
+                  })
+                }/*else {
+              //Check if stored item was changed on server
+              if (this.hasChangedOnServer(`taskId${oneTask.uuid}`, oneTask.hash, result.rows) ){
+                this.updateLocalData(`taskId${oneTask.uuid}`, { "id": oneTask.uuid, "data": oneTask.task, hash: oneTask.hash })
+              }
+            }*/
+
+              })
+             
+              data.settings2.map((item, index) => {
+                this.sqlFindSome("settings", `uuid = "${item.type}"`).then(data => {
+                  if (data.length > 0) {
+                   // this.sqlUpdate("settings", "calendar", [oneNote.uuid, oneNote.data, oneNote.updated, "notes", "false"])
+                  } else {
+  
+                    this.sqlInsert("settings", "uuid, data, type, updated, needSync", [item.type, item.data, "settings", item.updated, "false"]).then(() => {
+                      if (index == 4 ) {
+                        settingsLoaded = true
+            
+                        setTimeout(() => {resolve("DONE PROMISE")}, 50)
+        
+                      }
+                    })
+  
+                  }
+                 
+  
+                })                  
+                
+  
+        }
+        )
+          
+
+      }
+      ).catch ((error) => {
+        //Error login
+        this.sqlFind("settings").then(data => {
+          if (data[0] != undefined) {
+            this.createToast("Connection error", "warning", 4000)
+            resolve()
+          } else {
+            this.setState({ isLoadingData: false })
+            NavigationService.navigate('Error')
+          }
+        })
+        .catch(error => {
+          this.setState({ isLoadingData: false })
+    
+          this.createToast("Connection error", "warning", 4000)
+    
+          console.log(error)
+          // Error retrieving data]
+        })
+          
+        
+        console.log(error);
+      })
+
+})
+
+})
+
+}
+
+///
 
   
   decryptSqlData = (id, data, password) => {
@@ -1201,10 +1656,8 @@ fetchEventsFromServer = () => {
            else {
              
              if (decryptedData.repeated) {
-              console.log(decryptedData)
                for (let i=0; i<parseInt(decryptedData.repeated.count); i++) {
                  let newDecryptedData = {uuid: decryptedData.uuid, updated: decryptedData.updated, dateFrom: this.getRepeated(decryptedData.repeated.value, decryptedData.dateFrom, i).toString(), dateTill: this.getRepeated(decryptedData.repeated.value,decryptedData.dateTill, i).toString(), text: decryptedData.text, location: decryptedData.location, notes: decryptedData.notes, reminder: decryptedData.reminder, calendar: decryptedData.calendar, repeat: true, repeated: decryptedData.repeated}
-                 console.log(newDecryptedData)
                  this.setState(prevState => ({
                    events: [...prevState.events, newDecryptedData]
                  }))
@@ -1749,12 +2202,11 @@ fetchEventsFromServer = () => {
       toastType: toastType,
       toastText: toastText,
       toastDuration: toastDuration
-    }, () => this.hideToast())
-    
+    }, () => toastDuration ? this.hideToast(toastDuration) : null)
   }
 
   hideToast = (timeout) => {
-    setTimeout(() => { this.setState({ toastIsVisible: false }) }, 6000)
+    setTimeout(() => { this.setState({ toastIsVisible: false }) }, timeout)
   }
 
   componentWillMount() {
@@ -2006,6 +2458,7 @@ updateStateId = (myState, storeKey, newId) => {
       if (item.type == "tasks" || item.type == "events") {
         this.createNotification(stateData)
       }
+      
       this.updateStateData(item.type, stateData).then(res => this.sqlUpdate(item.type, `data = '${item.data}', needSync = 'true', updated = '${item.updated}', parrent = '${item.parrent}'`, `uuid = '${item.uuid}'` ).then(() => {
         // this.createToast(item.type + " edited", "normal", 4000)
        }).then(() => {
@@ -2093,12 +2546,17 @@ updateStateId = (myState, storeKey, newId) => {
 
    refreshData = () => {
     return new Promise((resolve, reject) => {
+     this.refreshDataFromServer().then(() => {
 
-     this.fetchEventsFromServer().then(() => {
-      this.fetchEventsFromLocal().then(
+      this.createToast("Data updated", "normal", 4000)
+
         resolve()
+
+      }
       )
-     })
+     }).catch((error) => {
+        this.createToast("Connection error", "warning", 4000)
+        reject()
     })
 }
 

@@ -2,7 +2,7 @@ import React from "react";
 //import "./Register.css";
 import { StatusBar, View, Text, TextInput, StyleSheet, ScrollView, TouchableHighlight, Alert, TouchableNativeFeedback, TouchableWithoutFeedback, Button, TimePickerAndroid, DatePickerAndroid, Switch, Dimensions } from "react-native"
 import { Keyboard } from 'react-native'
-import CryptoJS from "react-native-crypto-js";
+import CryptoJS from "crypto-js";
 import { sendPost, hashForComparingChanges } from '../../functions.js';
 import dateFns, { addHours, setMinutes, subMinutes, subHours, getYear, getMonth, getHours, getDate, isBefore, getMinutes } from "date-fns";
 var PushNotification = require('react-native-push-notification');
@@ -43,8 +43,8 @@ class EventIntput extends React.Component {
       pubkey:``,
       privkey: ``,
       passphrase: `testtest`,
-      reminder: false,
-      reminderValue: "5 minutes before",
+      reminder: "",
+      reminderValue: "",
       repeat: false,
       repeatValue: "",
       repeatCount: "",
@@ -208,7 +208,7 @@ class EventIntput extends React.Component {
   
     let eventReminder = this.getEventReminder();
     Keyboard.dismiss()
-    let valueForEncryption = {dateFrom: this.state.dateFrom.toString(), dateTill: this.state.dateTill.toString(), text: this.state.text, location: this.state.location, notes: this.state.notes, reminder: eventReminder.toString(), calendar: this.props.event.calendar, repeat: this.state.repeat, repeated: repeatedValue}
+    let valueForEncryption = {dateFrom: this.state.dateFrom.toString(), dateTill: this.state.dateTill.toString(), text: this.state.text, location: this.state.location, notes: this.state.notes, reminder: eventReminder.toString(), calendar: this.props.event.calendar, repeat: this.state.repeat, repeated: repeatedValue, remindBefore: this.state.reminderValue,isFavourite: this.props.event.isFavourite}
     return valueForEncryption;
   }
 
@@ -225,7 +225,7 @@ class EventIntput extends React.Component {
 
     this.props.editItem({
       "uuid": this.props.event.uuid, "data": encryptedData, "updated": timestamp, "parrent": this.props.event.calendar, "shared": "", type: "events", "isLocal": "true", "needSync": "true" }, {
-        "dateFrom": this.state.dateFrom.toString(), "dateTill": this.state.dateTill.toString(), "uuid": this.props.event.uuid, "text": this.state.text, "location": this.state.location, "notes": this.state.notes, "reminder": this.getEventReminder(), "calendar": this.props.event.calendar, "updated": timestamp, repeat: this.state.repeat
+        "dateFrom": this.state.dateFrom.toString(), "dateTill": this.state.dateTill.toString(), "uuid": this.props.event.uuid, "text": this.state.text, "location": this.state.location, "notes": this.state.notes, "reminder": this.getEventReminder(), "calendar": this.props.event.calendar, "isFavourite": this.props.event.isFavourite, "updated": timestamp, repeat: this.state.repeat, remindBefore: this.state.reminderValue
       }, "events", "Event created")
       NavigationService.navigate('Calendar')
 
@@ -261,18 +261,129 @@ class EventIntput extends React.Component {
 
   
   componentWillMount () {
+    console.log(this.props.event)
     this.setState({ 
       text: this.props.event.text,
       location: this.props.event.location,
       notes: this.props.event.notes,
       dateFrom: this.props.event.dateFrom,
       dateTill: this.props.event.dateTill,
-      reminder: this.props.event.reminder,
+      reminderValue: this.props.event.remindBefore,
       repeat: this.props.event.repeat,
       calendar: this.props.event.calendar
     })
+    if (this.props.event.reminder) {
+      this.setState({ reminder: true })
+    }
+  }
+  setMenuRefNotification = ref => {
+    this._menuNotification = ref;
+  };
+
+  hideMenuNotification = () => {
+    this._menuNotification.hide();
+  };
+
+  showMenuNotification = () => {
+    Keyboard.dismiss()
+    this._menuNotification.show();
+  };
+  selectNotification = (option) => {
+    this.setState({ reminderValue: option})
+    this.hideMenuNotification()
   }
 
+  renderMenuNotification = () => {
+    const options = [{label: "on start", value: "0"}, {label: "5 minutes before", value: "5"}, {label: "15 minutes before", value: "15"}, {label: "hour before", value: "60"}, {label: "6 hours before", value: "360"}, {label: "day before", value: "1440"}, {label: "week before", value: "10080"}]
+    return (
+      options.map(item => {
+
+        return (
+          <TouchableNativeFeedback onPress={() => this.selectNotification(item)}>
+          <View style={{display: "flex", width: "100%", padding: 8}}>
+          <Text 
+            style={{color: "mintcream", fontSize: 20 }}> 
+            {item.label}
+            </Text>
+            </View>
+            </TouchableNativeFeedback>
+
+        )
+      })
+    )
+  }
+  setMenuRefRepeatEvery = ref => {
+    this._menuRepeatEvery = ref;
+  };
+
+  hideMenuRepeatEvery = () => {
+    this._menuRepeatEvery.hide();
+  };
+
+  showMenuRepeatEvery = () => {
+    Keyboard.dismiss()
+    this._menuRepeatEvery.show();
+  };
+  selectRepeatEvery = (option) => {
+    this.setState({ repeatValue: option})
+    this.hideMenuRepeatEvery()
+  }
+
+  renderMenuRepeatEvery = () => {
+    const options = [{label: "day", value: "day"}, {label: "week", value: "week"}, {label: "month", value: "month"}]
+    return (
+      options.map(item => {
+
+        return (
+          <TouchableNativeFeedback onPress={() => this.selectRepeatEvery(item.value)}>
+          <View style={{display: "flex", width: "100%", padding: 8}}>
+          <Text 
+            style={{color: "mintcream", fontSize: 20 }}> 
+            {item.label}
+            </Text>
+            </View>
+            </TouchableNativeFeedback>
+
+        )
+      })
+    )
+  }
+  setMenuRefRepeatCount = ref => {
+    this._menuRepeatCount = ref;
+  };
+
+  hideMenuRepeatCount= () => {
+    this._menuRepeatCount.hide();
+  };
+
+  showMenuRepeatCount = () => {
+    Keyboard.dismiss()
+    this._menuRepeatCount.show();
+  };
+  selectRepeatCount = (option) => {
+    this.setState({ repeatCount: option})
+    this.hideMenuRepeatCount()
+  }
+
+  renderMenuRepeatCount = () => {
+    const options = [{label: "two", value: "2"}, {label: "three", value: "3"}, {label: "four", value: "4"}, {label: "five", value: "5"}, {label: "six", value: "6"}, {label: "seven", value: "7"}]
+    return (
+      options.map(item => {
+
+        return (
+          <TouchableNativeFeedback onPress={() => this.selectRepeatCount(item)}>
+          <View style={{display: "flex", width: "100%", padding: 8}}>
+          <Text 
+            style={{color: "mintcream", fontSize: 20 }}> 
+            {item.label}
+            </Text>
+            </View>
+            </TouchableNativeFeedback>
+
+        )
+      })
+    )
+  }
   componentDidMount () {
   }
 
@@ -340,114 +451,105 @@ class EventIntput extends React.Component {
 
       <Text style={{ fontSize: 22, paddingTop: 8, paddingBottom: 8, paddingLeft: 6, paddingRight: 20, alignSelf: "center", color: this.props.darkTheme ? "#C7D2D6" : "#2F3344" }}>Notification</Text>
 
-      <View style={{  paddingTop: 8, paddingBottom: 8, position: "absolute", right: WIDTH / 4 / 2,  }}>
-      <Switch name="reminder" value={this.state.reminder} onValueChange={() => {this.toogleSwitchReminder() }}/>
-      </View>
-      </View> 
-      {this.state.reminder
-      ? 
-      <View style={{ flexDirection: "row", borderBottomWidth: 0.4, borderBottomColor: "#C7D2D6",}} >
+<View style={{  paddingTop: 8, paddingBottom: 8, position: "absolute", right: WIDTH / 4 / 2,  }}>
+<Switch name="reminder" value={this.state.reminder} onValueChange={() => {this.toogleSwitchReminder() }}/>
+</View>
+</View> 
+{this.state.reminder
+? 
+<View style={{ flexDirection: "row", borderBottomWidth: 0.4, borderBottomColor: "#C7D2D6",}} >
+
+<View style={{paddingTop: 8, paddingBottom: 8, paddingLeft: 20, paddingRight: 20, justifyContent: "center", }}>
+   <Ionicons name="md-time" size={24} color="#ffffff00"/>
+   </View>
+
+   <Text style={{ fontSize: 22, paddingTop: 8, paddingBottom: 8, paddingLeft: 6, alignSelf: "center", color: this.props.darkTheme ? "#C7D2D6" : "#2F3344" }}>Remind me </Text>
+
+   <View style={{paddingTop: 8, paddingBottom: 8 }}>
+   <Menu
+ref={this.setMenuRefNotification}
+style={{ backgroundColor: "#373E40", elevation: 8,fontSize: 22, color: "mintcream"
+}}
+button={<Text style={{color: "dodgerblue", fontSize: 22}} onPress={() => this.showMenuNotification()}>{this.state.reminderValue.label}</Text>}
+>
+{this.renderMenuNotification()}
+  </Menu>
+   </View>
+   </View> 
    
-      <View style={{paddingTop: 8, paddingBottom: 8, paddingLeft: 20, paddingRight: 20, justifyContent: "center", }}>
-         <Ionicons name="md-time" size={24} color="dodgerblue"/>
-         </View>
+
+: null
+}
+</View> 
+{/*
+<View style={{flexDirection: "column", width: "100%", borderBottomWidth: 0.4, borderBottomColor: "#C7D2D6", }}>
+<View style={{ flexDirection: "row",}} >
+
+<View style={{paddingTop: 8, paddingBottom: 8, paddingLeft: 20, paddingRight: 20, justifyContent: "center", }}>
+<Ionicons name="md-repeat" size={24} color="dodgerblue"/>
+</View>
+
+<Text style={{ fontSize: 22, paddingTop: 8, paddingBottom: 8, paddingLeft: 6, paddingRight: 20, color: this.props.darkTheme ? "#C7D2D6" : "#2F3344" }}>Repeat</Text>
+
+<View style={{ paddingTop: 8, paddingBottom: 8, position: "absolute", right: WIDTH / 4 / 2,  }}>
+<Switch name="repeat" value={this.state.repeat} onValueChange={() => {this.toogleSwitchRepeat() }}/>
+</View>
+</View> 
+{this.state.repeat
+? 
+<View>
+<View style={{ flexDirection: "row"}} >
+
+<View style={{paddingLeft: 20, paddingRight: 20, justifyContent: "center", }}>
+   <Ionicons name="md-time" size={24} color="#ffffff00"/>
+   </View>
+
+   <Text style={{ fontSize: 22, paddingTop: 8, paddingBottom: 8, paddingLeft: 6, alignSelf: "center", color: this.props.darkTheme ? "#C7D2D6" : "#677477" }}>Schedule every </Text>
+
+   <View style={{paddingTop: 8, paddingBottom: 8 }}>
+   <Menu
+ref={this.setMenuRefRepeatEvery}
+style={{ backgroundColor: "#373E40", elevation: 8,fontSize: 22, color: "mintcream"
+}}
+button={<Text style={{color: "dodgerblue", fontSize: 22}} onPress={() => this.showMenuRepeatEvery()}>{this.state.repeatValue}</Text>}
+>
+{this.renderMenuRepeatEvery()}
+  </Menu>
+   </View>
+   </View> 
    
-         <Text style={{ fontSize: 22, paddingTop: 8, paddingBottom: 8, paddingLeft: 6, paddingRight: 20, alignSelf: "center", color: this.props.darkTheme ? "#C7D2D6" : "#2F3344" }}>Remind me</Text>
+   <View style={{ flexDirection: "row", borderBottomWidth: 0.4, borderBottomColor: "gray",}} >
+
+<View style={{paddingLeft: 20, paddingRight: 20, justifyContent: "center", }}>
+<Ionicons name="md-time" size={24} color="#ffffff00"/>
+
+   </View>
+
+   <Text style={{ fontSize: 22, paddingTop: 8, paddingBottom: 8, paddingLeft: 6,  alignSelf: "center", color: this.props.darkTheme ? "#C7D2D6" : "#677477" }}>for </Text>
+
+   <View style={{paddingTop: 8, paddingBottom: 8 }}>
+   <Menu
+ref={this.setMenuRefRepeatCount}
+style={{ backgroundColor: "#373E40", elevation: 8,fontSize: 22, color: "mintcream"
+}}
+button={<Text style={{color: "dodgerblue", fontSize: 22}} onPress={() => this.showMenuRepeatCount()}>{this.state.repeatCount.label}</Text>}
+>
+{this.renderMenuRepeatCount()}
+  </Menu>
+
+   </View>
+   <Text style={{ fontSize: 22, paddingTop: 8, paddingBottom: 8, paddingLeft: 6,  alignSelf: "center", color: this.props.darkTheme ? "#C7D2D6" : "#677477" }}>times</Text>
+
+   </View> 
    
-         <View style={{ paddingTop: 8, paddingBottom: 8, paddingLeft: WIDTH / 4, }}>
-        <Picker
-        style={{ width: 220, paddingRight: 20, color: this.props.darkTheme ? "#C7D2D6" : "#2F3344"   }}
-        selectedValue={this.state.reminderValue}
-        onValueChange={(itemValue, itemIndex) => this.setState({reminderValue: itemValue})}>
-        <Picker.Item label="On start" value="0" />
-        <Picker.Item label="5 minutes before" value="5" />
-        <Picker.Item label="15 minutes before" value="15" />
-        <Picker.Item label="Hour before" value="60" />
-        <Picker.Item label="6 hours before" value="360" />
-        <Picker.Item label="Day before" value="1440" />
-        <Picker.Item label="Week before" value="10080" />
+   </View>
 
-      </Picker>
-         </View>
-         </View> 
-         
+: null
+}
+</View> 
+*/
+}
 
-      : null
-     }
-      </View> 
-
-      <View style={{flexDirection: "column", width: "100%", borderBottomWidth: 0.4, borderBottomColor: "#C7D2D6", }}>
-   <View style={{ flexDirection: "row",}} >
-
-   <View style={{paddingTop: 8, paddingBottom: 8, paddingLeft: 20, paddingRight: 20, justifyContent: "center", }}>
-      <Ionicons name="md-repeat" size={24} color="dodgerblue"/>
-      </View>
-
-      <Text style={{ fontSize: 22, paddingTop: 8, paddingBottom: 8, paddingLeft: 6, paddingRight: 20, color: this.props.darkTheme ? "#C7D2D6" : "#2F3344" }}>Repeat</Text>
-
-      <View style={{ paddingTop: 8, paddingBottom: 8, position: "absolute", right: WIDTH / 4 / 2,  }}>
-      <Switch name="repeat" value={this.state.repeat} onValueChange={() => {this.toogleSwitchRepeat() }}/>
-      </View>
-      </View> 
-      {this.state.repeat
-      ? 
-      <View>
-      <View style={{ flexDirection: "row"}} >
-   
-      <View style={{paddingLeft: 20, paddingRight: 20, justifyContent: "center", }}>
-         <Ionicons name="md-time" size={24} color="dodgerblue"/>
-         </View>
-   
-         <Text style={{ fontSize: 22, paddingTop: 8, paddingBottom: 8, paddingLeft: 6, paddingRight: 20, alignSelf: "center", color: this.props.darkTheme ? "#C7D2D6" : "#677477" }}>Every</Text>
-   
-         <View style={{ paddingTop: 8, paddingBottom: 8, paddingLeft: WIDTH / 2, }}>
-        <Picker
-        style={{ width: 220, paddingRight: 20, color: this.props.darkTheme ? "#C7D2D6" : "#2F3344"    }}
-        selectedValue={this.state.repeatValue}
-        onValueChange={(itemValue, itemIndex) => this.setState({repeatValue: itemValue})}>
-        <Picker.Item label="day" value="day" />
-        <Picker.Item label="week" value="week" />
-        <Picker.Item label="2 weeks" value="15" />
-        <Picker.Item label="month" value="month" />
-        <Picker.Item label="3 months" value="360" />
- 
-
-      </Picker>
-         </View>
-         </View> 
-         
-         <View style={{ flexDirection: "row", borderBottomWidth: 0.4, borderBottomColor: "gray",}} >
-   
-      <View style={{paddingLeft: 20, paddingRight: 20, justifyContent: "center", }}>
-      <Ionicons name="md-time" size={24} color="dodgerblue"/>
-
-         </View>
-   
-         <Text style={{ fontSize: 22, paddingTop: 8, paddingBottom: 8, paddingLeft: 6, paddingRight: 20, alignSelf: "center", color: this.props.darkTheme ? "#C7D2D6" : "#677477" }}>How long</Text>
-   
-         <View style={{ paddingTop: 8, paddingLeft: WIDTH / 4, }}>
-        <Picker
-        style={{ width: 220, paddingRight: 20, color: this.props.darkTheme ? "#C7D2D6" : "#2F3344"    }}
-        selectedValue={this.state.repeatCount}
-        onValueChange={(itemValue, itemIndex) => this.setState({repeatCount: itemValue})}>
-        <Picker.Item label="2" value="2" />
-        <Picker.Item label="3" value="3" />
-        <Picker.Item label="4" value="4" />
-        <Picker.Item label="5" value="5" />
-        <Picker.Item label="6" value="6" />
- 
-
-      </Picker>
-         </View>
-         </View> 
-         
-         </View>
-
-      : null
-     }
-      </View> 
-
-    
 
       <View style={{ borderBottomWidth: 0.4, borderBottomColor: "gray", flexDirection: "row"}} >
       <View style={{paddingTop: 8, paddingBottom: 8, paddingLeft: 20, paddingRight: 20, justifyContent: "center" }}>
