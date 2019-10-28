@@ -103,7 +103,7 @@ class ListRow extends React.Component {
       alignItems: "center", 
     }
     const textCol = {
-      marginLeft: 24, 
+      marginLeft: 20, 
       width: WIDTH - 156,
       justifyContent: "center",
       flexDirection: "column",
